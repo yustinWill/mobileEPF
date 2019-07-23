@@ -6,6 +6,7 @@ export const AccentColorGold = "#FFD700"
 export const InactiveColor = '#7A7A7A'
 export const BlackColor = "#2c2a2a"
 export const WhiteColor = '#fbfafa'
+export const LightGrayColor = '#efefef'
 export const GrayColor = '#7a7a7a'
 
 //Fonts

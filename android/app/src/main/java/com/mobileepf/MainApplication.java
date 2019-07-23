@@ -8,7 +8,7 @@ import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.BV.LinearGradient.LinearGradientPackage;
-// import com.oblador.vectoricons.VectorIconsPackage;
+// import org.reactnative.camera.RNCameraPackage;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class MainApplication extends Application implements ReactApplication {
       @SuppressWarnings("UnnecessaryLocalVariable")
       List<ReactPackage> packages = new PackageList(this).getPackages();
       packages.add(new LinearGradientPackage());
-      // packages.add(new VectorIconsPackage());
+      // packages.add(new RNCameraPackage());
       // Packages that cannot be autolinked yet can be added manually here, for example:
       // packages.add(new MyReactNativePackage());
       return packages;

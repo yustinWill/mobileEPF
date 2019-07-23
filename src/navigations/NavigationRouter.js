@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Router, Scene, Stack, Tabs, Actions } from 'react-native-router-flux';
 import { TouchableNativeFeedback, View, Text, Platform, TouchableWithoutFeedback, Alert, BackHandler } from 'react-native';
+import { PrimaryColor, WhiteColor } from '../GlobalConfig';
 
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 
@@ -8,56 +9,94 @@ import SplashScreen from '../containers/SplashScreen/SplashScreen'
 import LoginScreen from '../containers/LoginScreen/LoginScreen'
 
 import HomeScreen from '../containers/HomeScreen/HomeScreen'
-// import WorkOrderScreen from '../containers/WorkOrderScreen/WorkOrderScreen'
-import CollectionScreen from '../containers/CollectionScreen/CollectionScreen'
-import { PrimaryColor, WhiteColor } from '../GlobalConfig';
+import WorkOrderScreen from '../containers/WorkOrderScreen/WorkOrderScreen'
 import CollectionDetailScreen from '../containers/CollectionDetailScreen/CollectionDetailScreen';
+import CameraScreen from '../containers/CameraScreen';
+import RequestJBScreen from '../containers/RequestJBScreen';
+import SignatureScreen from '../containers/SignatureScreen';
+import SettingScreen from '../containers/SettingScreen/SettingScreen';
+import SettingDetailScreen from '../containers/SettingDetailScreen';
 
 export default class NavigationRouter extends Component {
 	handleBack = () => {
 		let screen = Actions.currentScene;
 		switch (screen) {
-			case '_home':
+			case 'home':
 				Alert.alert(
-					'Quit Application',
-					'Are you sure you want to quit application?',
+					'Keluar Aplikasi',
+					'Apakah Anda yakin untuk keluar aplikasi?',
 					[
 						{
-							text: 'Cancel',
+							text: 'Tidak',
 							onPress: () => console.log('Cancel Pressed'),
 							style: 'cancel',
 						},
-						{ text: 'Quit', onPress: () => BackHandler.exitApp() },
+						{ text: 'Ya', onPress: () => BackHandler.exitApp() },
 					],
 					{ cancelable: false },
 				);
 				return true;
 			case 'login':
 				Alert.alert(
-					'Quit Application',
-					'Are you sure you want to quit application?',
+					'Keluar Aplikasi',
+					'Apakah Anda yakin untuk keluar aplikasi?',
 					[
 						{
-							text: 'Cancel',
+							text: 'Tidak',
 							onPress: () => console.log('Cancel Pressed'),
 							style: 'cancel',
 						},
-						{ text: 'Quit', onPress: () => BackHandler.exitApp() },
+						{ text: 'Ya', onPress: () => BackHandler.exitApp() },
 					],
 					{ cancelable: false },
 				);
 				return true;
 			case 'splash':
 				Alert.alert(
-					'Quit Application',
-					'Are you sure you want to quit application?',
+					'Keluar Aplikasi',
+					'Apakah Anda yakin untuk keluar aplikasi?',
 					[
 						{
-							text: 'Cancel',
+							text: 'Tidak',
 							onPress: () => console.log('Cancel Pressed'),
 							style: 'cancel',
 						},
-						{ text: 'Quit', onPress: () => BackHandler.exitApp() },
+						{ text: 'Ya', onPress: () => BackHandler.exitApp() },
+					],
+					{ cancelable: false },
+				);
+				return true;
+			case 'detailCollection':
+				Alert.alert(
+					'Batal Pengisian Form',
+					'Apakah Anda yakin untuk membatalkan pengisian form?',
+					[
+						{
+							text: 'Tidak',
+							onPress: () => console.log('Cancel Pressed'),
+							style: 'cancel',
+						},
+						{
+							text: 'Ya', onPress: () => {
+								Actions.pop()
+								setTimeout(() => Actions.refresh({ lastUpdated: new Date() }), 0)
+							}
+						},
+					],
+					{ cancelable: false },
+				);
+				return true;
+			case 'requestJB':
+				Alert.alert(
+					'Batal Pengisian Form',
+					'Apakah Anda yakin untuk membatalkan pengisian form?',
+					[
+						{
+							text: 'Tidak',
+							onPress: () => console.log('Cancel Pressed'),
+							style: 'cancel',
+						},
+						{ text: 'Ya', onPress: () => Actions.pop() },
 					],
 					{ cancelable: false },
 				);
@@ -104,24 +143,22 @@ export default class NavigationRouter extends Component {
 		return (
 			<Router
 				navigationBarStyle={{ backgroundColor: PrimaryColor }}
-				backAndroidHandler={() => {
-					let screen = Actions.currentScene;
-					Actions.pop();
-					return true;
-				}}
+				// navBarButtonColor={WhiteColor}
+				barButtonIconStyle={{ tintColor: WhiteColor }}
+				backAndroidHandler={this.handleBack}
 			>
 				<Stack
 					transitionConfig={transitionConfig}
 					key='root'>
 					<Scene
 						initial
-						type='reset'
+						// type='reset'
 						hideNavBar
 						key='splash'
 						component={SplashScreen} />
 					<Scene
 						// initial
-						type='reset'
+						// type='reset'
 						hideNavBar
 						key='login'
 						component={LoginScreen} />
@@ -132,18 +169,51 @@ export default class NavigationRouter extends Component {
 						key='home'
 						component={HomeScreen} />
 					<Scene
+						// initial
+						hideNavBar
+						key='camera'
+						component={CameraScreen} />
+					<Scene
+						// initial
 						back
 						backButtonTintColor={WhiteColor}
-						title="Collection"
+						title="Pengaturan"
 						renderTitle={this.renderTitle}
-						key='collection'
-						component={CollectionScreen} />
+						key='setting'
+						component={SettingScreen} />
+					<Scene
+						// initial
+						back
+						backButtonTintColor={WhiteColor}
+						title={this.props.title}
+						renderTitle={this.renderTitle}
+						key='detailSetting'
+						component={SettingDetailScreen} />
+					<Scene
+						// initial
+						hideNavBar
+						key='signaturePad'
+						component={SignatureScreen} />
+					<Scene
+						back
+						backButtonTintColor={WhiteColor}
+						title="Ajukan Janji Bayar"
+						renderTitle={this.renderTitle}
+						key='requestJB'
+						component={RequestJBScreen} />
+					<Scene
+						back
+						backButtonTintColor={WhiteColor}
+						title="Work Order"
+						renderTitle={this.renderTitle}
+						key='workOrder'
+						component={WorkOrderScreen} />
 					<Scene
 						back
 						backButtonTintColor={WhiteColor}
 						title="Informasi Collection"
 						renderTitle={this.renderTitle}
-						key='collectionDetail'
+						key='detailCollection'
 						component={CollectionDetailScreen} />
 				</Stack>
 			</Router>

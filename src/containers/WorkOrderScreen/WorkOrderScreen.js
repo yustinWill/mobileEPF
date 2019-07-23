@@ -3,8 +3,10 @@ import { Platform, Text, View, FlatList, TouchableOpacity, TextInput, ActivityIn
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 import EvilIcons from 'react-native-vector-icons/EvilIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
-import { PrimaryColor, PrimaryColorDark, InactiveColor, BlackColor, NunitoBold, NunitoSemiBold, GrayColor, WhiteColor } from '../../GlobalConfig';
+import Entypo from 'react-native-vector-icons/Entypo'
+import { PrimaryColor, PrimaryColorDark, InactiveColor, BlackColor, NunitoBold, NunitoSemiBold, GrayColor, WhiteColor, NunitoRegular } from '../../GlobalConfig';
 import AsyncStorage from '@react-native-community/async-storage';
+import { Actions } from 'react-native-router-flux';
 
 const SafeArea = 15
 
@@ -14,7 +16,7 @@ export default class CollectionScreen extends Component {
 		this.state = {
 			isModalVisible: false,
 			isLoading: false,
-			collectionList: [
+			workOrderList: [
 				{
 					'order_NOPK': '400000845',
 					'order_customer_name': 'ETI ARYAWATI',
@@ -71,31 +73,75 @@ export default class CollectionScreen extends Component {
 					'order_action': '2'
 				}
 			],
-			filteredCollectionList: [],
-			search: ''
+			filteredWorkOrderList: [],
+			search: '',
+			lastUpdated: new Date()
 		}
 	}
 
+	componentDidUpdate(prevProps) {
+		if (prevProps.lastUpdated !== this.props.lastUpdated) {
+			this.onRefresh()
+		}
+	}
+
+	// static getDerivedStateFromProps(props, state) {
+	// 	if (props.lastUpdated !== state.lastUpdated) {
+	// 		return {
+	// 			lastUpdated: props.lastUpdated
+	// 		};
+	// 	}
+	// 	return null;
+	// }
+
 	componentDidMount() {
 		this.onRefresh()
-		// this.setState({ filteredCollectionList: this.state.collectionList })
+	}
+
+	handleItemClick = (item) => {
+		Actions.detailCollection({ collectionData: item })
 	}
 
 	/**
 	 * Item Component on List
 	 */
 	renderList = ({ item, index }) => {
+		var action = ""
+		switch (item.order_action) {
+			case "1":
+				action = "Survey"
+				break;
+			case "2":
+				action = "Collection"
+				break;
+			case "3":
+				action = "Janji Bayar"
+				break;
+		}
 		return (
-			<TouchableNativeFeedback>
+			<TouchableNativeFeedback onPress={() => this.handleItemClick(item)}>
 				<View style={{ width: '100%', paddingVertical: 10, paddingHorizontal: SafeArea }}>
 					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
 						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_NOPK}</Text>
 						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12, color: GrayColor, textAlign: 'right' }}>{item.order_time}</Text>
 					</View>
-					<View style={{ height: 50, width: '100%' }}>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 14 }}>{item.order_customer_name}</Text>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_city} - {item.order_district}</Text>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_license_plate} - {item.order_unit_type}</Text>
+					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 12 }}>{item.order_customer_name}</Text>
+						<Text style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{action}</Text>
+					</View>
+					<View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+						<View style={{ paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, marginRight: 5, backgroundColor: BlackColor }}>
+							<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 10, color: WhiteColor }}>{item.order_license_plate}</Text>
+						</View>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_unit_type}</Text>
+					</View>
+					<View style={{ width: '100%', flexDirection: 'row', alignItems: 'center' }}>
+						<Entypo
+							color={GrayColor}
+							size={16}
+							name={`location-pin`}
+						/>
+						<Text style={{ fontFamily: NunitoRegular, fontSize: 12 }}>{item.order_city} - {item.order_district}</Text>
 					</View>
 				</View>
 			</TouchableNativeFeedback>
@@ -108,20 +154,20 @@ export default class CollectionScreen extends Component {
 	onTextChange = value => {
 		let filteredList = []
 		this.setState({ search: value })
-		for (let i = 0; i < this.state.collectionList.length; i++) {
-			if (String(this.state.collectionList[i].order_customer_name).includes(String(value).toUpperCase())) filteredList.push(this.state.collectionList[i])
-			if (i === this.state.collectionList.length - 1) this.setState({ filteredCollectionList: filteredList })
+		for (let i = 0; i < this.state.workOrderList.length; i++) {
+			if (String(this.state.workOrderList[i].order_customer_name).includes(String(value).toUpperCase())) filteredList.push(this.state.workOrderList[i])
+			if (i === this.state.workOrderList.length - 1) this.setState({ filteredWorkOrderList: filteredList })
 		}
 	}
 
 	/**
 	 * Clear Search Bar Text
-	 * Reset the Temporary Inventory Lists
+	 * Reset the Temporary Work Order Lists
 	 */
 	clearText = () => {
 		this.setState({
 			search: '',
-			filteredCollectionList: this.state.collectionList
+			filteredWorkOrderList: this.state.workOrderList
 		})
 	}
 
@@ -133,11 +179,11 @@ export default class CollectionScreen extends Component {
 		this.setState({
 			isLoading: true,
 			search: '',
-			filteredCollectionList: []
+			filteredWorkOrderList: []
 		}, () => {
 			setTimeout(() => {
 				this.setState({
-					filteredCollectionList: this.state.collectionList,
+					filteredWorkOrderList: this.state.workOrderList,
 					isLoading: false
 				})
 			}, 500)
@@ -158,7 +204,7 @@ export default class CollectionScreen extends Component {
 
 		const listEmpty = (
 			<View style={{ width: '100%', alignItems: 'center', marginTop: '25%' }}>
-				<Text style={{ fontFamily: NunitoBold }}>Daftar Collection Kosong</Text>
+				<Text style={{ fontFamily: NunitoBold }}>Daftar Work Order Kosong</Text>
 			</View>
 		)
 
@@ -192,8 +238,8 @@ export default class CollectionScreen extends Component {
 								</TouchableOpacity> : null}
 						</View>
 					</View>
-					<View style={{ height: 30, width: '100%', marginBottom: 10, paddingHorizontal: SafeArea, flexDirection: 'row', justifyContent: 'space-between', alignItems:'center' }}>
-						<Text style={{ fontFamily: NunitoSemiBold, color: BlackColor, fontSize: 16 }}>{this.state.search ? `Menampilkan ${this.state.filteredCollectionList.length} dari ${this.state.collectionList.length} data` : `Collection ${this.state.filteredCollectionList.length} data`}</Text>
+					<View style={{ height: 30, width: '100%', marginBottom: 10, paddingHorizontal: SafeArea, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+						<Text style={{ fontFamily: NunitoSemiBold, color: BlackColor, fontSize: 16 }}>{this.state.search ? `Menampilkan ${this.state.filteredWorkOrderList.length} dari ${this.state.workOrderList.length} data` : `Work Order ${this.state.filteredWorkOrderList.length} data`}</Text>
 						<TouchableOpacity
 							style={{
 								paddingHorizontal: 5,
@@ -225,8 +271,8 @@ export default class CollectionScreen extends Component {
 					style={{ flex: 1 }}
 					ItemSeparatorComponent={listSeparator}
 					ListEmptyComponent={this.state.isLoading ? listLoading : listEmpty}
-					extraData={this.state.filteredCollectionList}
-					data={this.state.filteredCollectionList}
+					extraData={this.state.filteredWorkOrderList}
+					data={this.state.filteredWorkOrderList}
 					keyExtractor={item => item.order_NOPK}
 					renderItem={this.renderList}
 				/>

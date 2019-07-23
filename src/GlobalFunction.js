@@ -20,7 +20,7 @@ export function isLength(param, max) {
  * @param {String} param 
  */
 export function isEmail(param) {
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/ 
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
     return reg.test(param) === false ? true : false
 }
 
@@ -29,5 +29,33 @@ export function isEmail(param) {
  * @param {Int} value 
  */
 export const idr = (value) => {
-    if (value) return "Rp. " + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");    
+    if (value) return "Rp. " + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/**
+ * Convert The YYYY-MM-DD Format
+ * to DD/MM/YYYY Format
+ * @param {String} time 
+ */
+export const trimDDMMYYYY = (time) => {
+    indonesianDate = ""
+    dateTrimmed = time.substr(0, 10)
+    datesplit = dateTrimmed.split("-")
+    indonesianDate = datesplit[2] + "/" + datesplit[1] + "/" + datesplit[0]
+    return indonesianDate
+}
+
+/**
+ * Convert The YYYY-MM-DD Format
+ * to DD M YYYY Format
+ * @param {String} time 
+ */
+export const trimNormalDate = (time) => {
+    normalDate = ""
+    indonesianMonth = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    dateTrimmed = time.substr(0, 10)
+    datesplit = dateTrimmed.split("-")
+    
+    normalDate = datesplit[2] + " " + indonesianMonth[datesplit[1] - 1] + " " + datesplit[0]
+    return normalDate
 }

@@ -1,23 +1,14 @@
 import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, Image, View, StatusBar, PermissionsAndroid, Dimensions } from 'react-native';
+import { Platform, StyleSheet, Text, Image, View, StatusBar, PermissionsAndroid, Dimensions, YellowBox } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import { PrimaryColorDark, PrimaryColorLight, WhiteColor, NunitoBold, Version } from '../../GlobalConfig';
+import { PrimaryColorDark, WhiteColor, NunitoBold, Version, BlackColor } from '../../GlobalConfig';
 import AsyncStorage from '@react-native-community/async-storage';
-import LinearGradient from 'react-native-linear-gradient';
-import Shimmer from 'react-native-shimmer';
 
 const logoPath = '../../images/logo.png'
 
 const { width } = Dimensions.get('screen')
 
 export default class SplashScreen extends Component {
-	constructor(props) {
-		super(props)
-		this.state = {
-			isAnimating: true
-		}
-	}
-
 	/**
 	 * Get Account Credential
 	 * If the Driver has login open the Main Screen
@@ -37,7 +28,28 @@ export default class SplashScreen extends Component {
 		// setTimeout(() => {
 		// 	Actions.login()
 		// }, 2500)
-		setTimeout(() => Actions.home(), 2500)
+		setTimeout(() => Actions.login(), 2500)
+		// setTimeout(() => Actions.home(), 2500)
+	}
+
+	requestSignature = async () => {
+		try {
+			const granted = await PermissionsAndroid.request(
+				PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+				{
+					'title': 'Signature Permission',
+					'message': 'Delivery Tracking Apps needs access to your Storage'
+				}
+			)
+			if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+				console.log("Storage permission allowed")
+			} else {
+				this.requestGPSPermission()
+				console.log("Storage permission denied!")
+			}
+		} catch (err) {
+			console.warn(err)
+		}
 	}
 
 	requestGPSPermission = async () => {
@@ -81,28 +93,26 @@ export default class SplashScreen extends Component {
 	}
 
 	componentDidMount = async () => {
-		// await this.requestImeiPermission()
+		await this.requestSignature()
 		await this.requestCameraPermission()
 		await this.requestGPSPermission()
+		// YellowBox.ignoreWarnings([
+		// 	'Warning: componentWillReceiveProps is deprecated',
+		// ]);
+		console.disableYellowBox = true;
 		this.getCredentialStatus()
 	}
 
 	render() {
 		return (
-			<LinearGradient colors={[PrimaryColorDark, PrimaryColorLight]} style={styles.container}>
-				<StatusBar backgroundColor={PrimaryColorDark} barStyle='light-content' />
-				<Shimmer
-					animating={this.state.isAnimating}
-					style={{ elevation: 5 }}
-					animationOpacity={0.8}
-					duration={1000}
-					pauseDuration={500}>
-					<Image resizeMode='contain' resizeMethod='resize' source={require(logoPath)} style={{ width: 150, height: 75, tintColor: WhiteColor }} />
-				</Shimmer>
+			<View style={styles.container}>
+				<StatusBar backgroundColor={PrimaryColorDark} barStyle='light-content' hidden />
+				<Image resizeMode='contain' resizeMethod='resize' source={require(logoPath)} style={{ width: 150, height: 75, marginBottom: 20 }} />
+				<Text style={styles.titleText}>EPF MOBILE</Text>
 				<View style={{ position: 'absolute', bottom: 50, width: width }}>
 					<Text style={styles.versionText}>Version {Version}</Text>
 				</View>
-			</LinearGradient>
+			</View>
 		);
 	}
 }
@@ -110,8 +120,16 @@ export default class SplashScreen extends Component {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+		backgroundColor: WhiteColor,
 		justifyContent: 'center',
 		alignItems: 'center'
+	},
+	titleText: {
+		color: BlackColor,
+		fontFamily: NunitoBold,
+		textAlign: 'center',
+		fontSize: 24,
+		letterSpacing: 2
 	},
 	versionText: {
 		fontSize: 10,
