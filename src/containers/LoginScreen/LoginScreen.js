@@ -1,18 +1,15 @@
 import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, Image, View, ScrollView, StatusBar, TouchableOpacity, Dimensions, ActivityIndicator, TextInput, Button } from 'react-native';
+import { StyleSheet, Text, Image, View, ScrollView, StatusBar } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import { PrimaryColorDark, SafeArea, WhiteColor, PrimaryColorLight, Version, NunitoBold, NunitoRegular, AccentColorGold, BlackColor, GrayColor } from '../../GlobalConfig';
-import LinearGradient from 'react-native-linear-gradient';
+import { PrimaryColorDark, SafeArea, WhiteColor } from '../../GlobalConfig';
 import AsyncStorage from '@react-native-community/async-storage';
 import Toast from 'react-native-root-toast';
-import { TouchableNativeFeedback } from 'react-native-gesture-handler';
 import { APILogin, LoginKeyUserName, LoginKeyPassword, LoginKeyGrantType, LoginKeyClientId, LoginKeyClientSecret } from '../../APIConfig';
+import Base64 from '../../libraries/Base64';
+import CustomTextInput from '../../components/CustomTextInput';
+import CustomButton from '../../components/CustomButton';
 
 const logoPath = '../../images/logo.png'
-const eyeClose = '../../images/eye-close.png'
-const eyeOpen = '../../images/eye-open.png'
-
-const { width } = Dimensions.get('screen')
 
 export default class LoginScreen extends Component {
 	constructor(props) {
@@ -21,21 +18,9 @@ export default class LoginScreen extends Component {
 			userID: '',
 			userPassword: '',
 			isLoading: false,
-			userIDFocus: false,
-			passFocus: false,
-			hidePass: true,
-			errorMessage: '',
-			isAnimating: true,
+			toastMessage: '',
 			visibleToast: false
 		}
-	}
-
-	componentDidMount() {
-		// setTimeout(() => this.forceUpdate(), 100)
-	}
-
-	componentWillUnmount() {
-		this.setState({ isAnimating: false })
 	}
 
 	/**
@@ -45,19 +30,19 @@ export default class LoginScreen extends Component {
 		this.setState({ isLoading: true })
 		// if (!this.state.userID) {
 		// 	this.setState({
-		// 		errorMessage: 'Kode Mitra kosong',
+		// 		toastMessage: 'Kode Mitra kosong',
 		// 		visibleToast: true
 		// 	})
 		// }
 		// else if (!this.state.userPassword) {
 		// 	this.setState({
-		// 		errorMessage: 'Kata Sandi kosong',
+		// 		toastMessage: 'Kata Sandi kosong',
 		// 		visibleToast: true
 		// 	})
 		// }
 		// else {
 		// 	this.setState({
-		// 		errorMessage: 'Berhasil masuk',
+		// 		toastMessage: 'Berhasil masuk',
 		// 		visibleToast: true,
 		// 		isLoading: true
 		// 	})
@@ -71,55 +56,54 @@ export default class LoginScreen extends Component {
 		// 		}
 		// 	}, 2000)
 		// }
-		// const formdata = new FormData()
-		// formdata.append('grant_type', LoginKeyGrantType)
-		// formdata.append('client_id', LoginKeyClientId)
-		// formdata.append('client_secret', LoginKeyClientSecret)
-		// formdata.append('username', "admin")
-		// formdata.append('password', "Password1*")
-		// fetch(APILogin, {
-		// 	method: 'post',
-		// 	headers: {
-		// 		'Authorization': 'Basic ' + btoa(`${LoginKeyUserName}:${LoginKeyPassword}`),
-		// 		'Content-Type': 'application/x-www-form-urlencoded'
-		// 	},
-		// 	body: formdata
-		// })
-		// 	.then(res => {
-		// 		if (res.status === 200) {
-		// 			Animated.timing(
-		// 				this.animatedVerificiationForm,
-		// 				{
-		// 					toValue: 1,
-		// 					duration: 500
-		// 				},
-		// 				{ useNativeDriver: true }
-		// 			).start()
-		// 		}
-		// 		else {
-		// 			this.setState({
-		// 				isLoading: false
-		// 			})
-		// 			toastError("Nomor telepon telah terdaftar")
-		// 		}
-		// 	})
-		// 	.catch(err => {
-		// 		this.setState({
-		// 			isLoading: false
-		// 		})
-		// 		toastError("Koneksi bermasalah")
-		// 	})
-		setTimeout(() => {
-			this.setState({
-				isLoading: false
+		const formdata = new FormData()
+		formdata.append('grant_type', LoginKeyGrantType)
+		formdata.append('client_id', LoginKeyClientId)
+		formdata.append('client_secret', LoginKeyClientSecret)
+		formdata.append('username', "admin")
+		formdata.append('password', "Password1*")
+		const headers = new Headers()
+		headers.set('Authorization', 'Basic ' + Base64.btoa(`${LoginKeyUserName}:${LoginKeyPassword}`))
+		fetch(APILogin, {
+			method: 'POST',
+			headers: headers,
+			body: formdata
+		})
+			.then(res => {
+				if (res.status === 200) {
+					return res.json()
+				}
+				else if (res.status === 400) {
+					this.setState({
+						toastMessage: 'User / Kata Sandi Salah',
+						visibleToast: true,
+						isLoading: false
+					})
+				}
+				else {
+					alert(`${this.state.userID}\n${res.status}\nMohon Screenshot dan Kirimkan ke Tim Dev`)
+				}
 			})
-			Actions.home()
-			// try {
-			// 	AsyncStorage.setItem('credentials', '1')
-			// } catch (e) {
-			// 	console.warn(e)
-			// }
-		}, 2000)
+			.then(resJson => {
+				if (resJson) {
+					console.log(resJson)
+					try {
+						AsyncStorage.setItem('user_data', JSON.stringify(resJson.data))
+					} catch (e) {
+						console.log(e)
+					}
+					setTimeout(() => {
+						this.setState({ isLoading: false })
+						Actions.home()
+					}, 1000)
+				}
+			})
+			.catch(err => {
+				alert(`${this.state.userID}\n${err}\nMohon Screenshot dan Kirimkan ke Tim Dev`)
+				this.setState({
+					isLoading: false
+				})
+			})
 	}
 
 	/**
@@ -131,96 +115,41 @@ export default class LoginScreen extends Component {
 		})
 	}
 
-	/**
-	 * Function called when Input box are focused
-	 */
-	onFocusInput = (type) => {
-		switch (type) {
-			case 'ID':
-				this.setState({ userIDFocus: true })
-				break;
-			case 'pass':
-				this.setState({ passFocus: true })
-				break;
-		}
-	}
-
-	/**
-	 * Function called when Input box are not focused
-	 */
-	onEndFocusInput = (type) => {
-		switch (type) {
-			case 'ID':
-				this.setState({ userIDFocus: false })
-				break;
-			case 'pass':
-				this.setState({ passFocus: false })
-				break;
-		}
-	}
-
 	render() {
 		return (
 			<View style={styles.container}>
 				<StatusBar backgroundColor={PrimaryColorDark} barStyle='light-content' />
 				<ScrollView
 					keyboardShouldPersistTaps='handled'
-					contentContainerStyle={{ flex: 1 }}>
+					style={{ flex: 1 }}>
 					<View style={{ marginTop: 50, marginBottom: 25, width: '100%', alignItems: 'center' }}>
 						<Image resizeMode='contain' resizeMethod='resize' source={require(logoPath)} style={{ width: 200, height: 100 }} />
 					</View>
-					<View style={{ width: '90%', paddingHorizontal: 20, paddingVertical: 30, alignSelf: 'center' }}>
-						<Text style={styles.inputTitle}>User</Text>
-						<View style={{ width: '100%', height: 50, marginBottom: SafeArea }}>
-							<View style={[styles.inputBox, this.state.userIDFocus ? null : { borderBottomColor: GrayColor }]}>
-								<TextInput
-									style={styles.inputText}
-									placeholderTextColor={GrayColor}
-									selectionColor={PrimaryColorDark}
-									onFocus={() => this.onFocusInput('ID')}
-									onEndEditing={() => this.onEndFocusInput('ID')}
-									onChangeText={this.onTextChange('userID')}
-									value={this.state.userID}
-								/>
-							</View>
-						</View>
-						<Text style={styles.inputTitle}>Kata Sandi</Text>
-						<View style={{ width: '100%', height: 50, marginBottom: SafeArea * 2 }}>
-							<View style={[styles.inputBox, this.state.userPassword ? null : { borderBottomColor: GrayColor }]}>
-								<TextInput
-									style={styles.inputText}
-									placeholderTextColor={GrayColor}
-									selectionColor={PrimaryColorDark}
-									onFocus={() => this.onFocusInput('pass')}
-									onEndEditing={() => this.onEndFocusInput('pass')}
-									onChangeText={this.onTextChange('userPassword')}
-									value={this.state.userPassword}
-									secureTextEntry={this.state.hidePass}
-								/>
-								<TouchableOpacity style={{ paddingHorizontal: 10 }} onPress={() => this.setState({ hidePass: !this.state.hidePass })}>
-									<Image
-										style={{ width: 25, height: 25, tintColor: BlackColor }}
-										source={this.state.hidePass ? require(eyeClose) : require(eyeOpen)}
-									/>
-								</TouchableOpacity>
-							</View>
-						</View>
-						<TouchableNativeFeedback
-							style={styles.buttonShadowStyle}
-							disabled={this.state.isLoading}
-							onPress={this.login}>
-							<View style={styles.buttonStyle}>
-								{this.state.isLoading ?
-									<ActivityIndicator color={WhiteColor} size='small' /> :
-									<Text style={styles.loginText}>MASUK</Text>}
-							</View>
-						</TouchableNativeFeedback>
+					<View style={{ width: '100%', paddingHorizontal: SafeArea, paddingVertical: 30, alignSelf: 'center' }}>
+						<CustomTextInput
+							label='User ID'
+							placeholder='Ketik disini'
+							onChangeText={this.onTextChange('userID')}
+							value={this.state.userID}
+						/>
+						<CustomTextInput
+							label='Kata Sandi'
+							isPassword
+							placeholder='Ketik disini'
+							onChangeText={this.onTextChange('userPassword')}
+							value={this.state.userPassword}
+						/>
+						<CustomButton
+							label="MASUK"
+							isLoading={this.state.isLoading}
+							onPress={this.login}
+						/>
 					</View>
 				</ScrollView>
 				<Toast
 					visible={this.state.visibleToast}
 					position={50}
-					children={<Text>{this.state.errorMessage}</Text>}
+					children={<Text>{this.state.toastMessage}</Text>}
 					animation
 					onShown={() => setTimeout(() => this.setState({ visibleToast: false }), 2000)}
 				/>
@@ -233,52 +162,5 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: WhiteColor
-	},
-	inputTitle: {
-		color: BlackColor,
-		fontFamily: NunitoBold
-	},
-	inputBox: {
-		flex: 1,
-		borderBottomWidth: 1,
-		borderBottomColor: PrimaryColorDark,
-		alignItems: 'center',
-		flexDirection: 'row'
-	},
-	inputText: {
-		flex: 1,
-		color: BlackColor,
-		fontFamily: NunitoRegular
-	},
-	buttonStyle: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: '100%',
-		height: 50
-	},
-	buttonShadowStyle: {
-		backgroundColor: PrimaryColorDark,
-		borderRadius: 10,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: 1,
-		},
-		shadowOpacity: 0.22,
-		shadowRadius: 2.22,
-
-		elevation: 3,
-	},
-	loginText: {
-		color: WhiteColor,
-		fontFamily: NunitoBold,
-		letterSpacing: 1
-	},
-	versionText: {
-		fontSize: 10,
-		textAlign: 'center',
-		color: BlackColor,
-		fontFamily: NunitoBold,
-		letterSpacing: 1
 	},
 });

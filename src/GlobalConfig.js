@@ -16,4 +16,4 @@ export const NunitoBold = "Nunito Bold"
 
 export const Version = '0.0.1'
 
-export const SafeArea = 15
+export const SafeArea = 16

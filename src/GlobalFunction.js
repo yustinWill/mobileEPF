@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-community/async-storage';
+
 /**
  * Check if String is null return true if not empty
  * @param {String} condition 
@@ -55,7 +57,47 @@ export const trimNormalDate = (time) => {
     indonesianMonth = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
     dateTrimmed = time.substr(0, 10)
     datesplit = dateTrimmed.split("-")
-    
+
     normalDate = datesplit[2] + " " + indonesianMonth[datesplit[1] - 1] + " " + datesplit[0]
     return normalDate
+}
+
+/**
+ * Return the user_data Local Storage :
+ * token_type,
+ * expires_in,
+ * access_token,
+ * refresh_token,
+ * user_data
+ * @param {milisec} ms 
+ */
+export function getUserData() {
+    return new Promise((resolve, reject) => {
+        try {
+            AsyncStorage.getItem('user_data', (err, res) => {
+                if (res) resolve(JSON.parse(res))
+                else reject(err)
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+
+/**
+ * Run the function after x ms
+ * @param {milisec} ms 
+ */
+export function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+/**
+ * Capitalize First Letter from Each Word
+ * @param {String} str 
+ */
+export function toTitleCase(str) {
+    return String(str).toLowerCase()
+        .split(' ')
+        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+        .join(' ');
 }

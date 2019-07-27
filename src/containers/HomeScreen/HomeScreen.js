@@ -7,6 +7,9 @@ import { Actions } from 'react-native-router-flux';
 import Modal from "react-native-modal"
 import AsyncStorage from '@react-native-community/async-storage';
 import LinearGradient from 'react-native-linear-gradient'
+import { getUserData, delay } from '../../GlobalFunction';
+import { APIUpdateLocation } from '../../APIConfig';
+import Geolocation from '@react-native-community/geolocation';
 
 const SafeArea = 15
 
@@ -18,6 +21,7 @@ export default class HomeScreen extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
+			user_id: null,
 			user_code: "001EN",
 			user_full_name: "ENDANG ABDUL SOBIRIN",
 			user_role: "1",
@@ -81,12 +85,54 @@ export default class HomeScreen extends Component {
 					'order_action': '2'
 				}
 			],
-			isLoading: false
+			isLoading: false,
+			locationLat: 0,
+			locationLong: 0,
 		}
 	}
 
 	componentDidMount() {
-		setTimeout(() => this.state,100)
+		getUserData().then(res => {
+			if (res) {
+				this.setState({
+					user_id: res.user_data.id,
+					// user_code : res.user_data.user_employee_code,
+					user_full_name: res.user_data.user_fullname
+				})
+				this.getCurrentLocation()
+			}
+		}).catch(err => console.log(err))
+	}
+
+	/**
+	 * Get the current Lat & Long
+	 * Pass it to Server to get the regency name
+	 */
+	getCurrentLocation = () => {
+		// this.setState({ isLoadingLocation: true })
+		setInterval(() => {
+			Geolocation.getCurrentPosition(position => {
+				if (position.coords.latitude && position.coords.longitude) {
+					const formdata = new FormData()
+					formdata.append('user_lat', position.coords.latitude)
+					formdata.append('user_lng', position.coords.longitude)
+					formdata.append('user_id', 1)
+					// formdata.append('user_id', this.props.user_id)
+					const headers = new Headers()
+					headers.set('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImE4ZTA3ZjcxMjE1MWY2NjNlYmY0YjNhYThjODBmMjY5ZmQyMjRmYTlmYTBjOGU5YzFmMTAzZDhlNTZiN2ZmYzc2NWVjZGYwN2ZlMzYxNWViIn0.eyJhdWQiOiIyIiwianRpIjoiYThlMDdmNzEyMTUxZjY2M2ViZjRiM2FhOGM4MGYyNjlmZDIyNGZhOWZhMGM4ZTljMWYxMDNkOGU1NmI3ZmZjNzY1ZWNkZjA3ZmUzNjE1ZWIiLCJpYXQiOjE1NjM4NjIwMzIsIm5iZiI6MTU2Mzg2MjAzMiwiZXhwIjoxNTk1NDg0NDMyLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Y7OSPc3xBYCGn4I0w_aRkW2mg26Po700NVPtGFoDyrYAGJryzgqpQSJi9DjaK7v5BRh2ae7nVTlXdvVz4_r8gchtCY9d-ffTDOprU8SnxMOl9j9-Wq565FfnKGEY90kOXgVEEmTen0FKatbAgOqqTjFSudMe2qkAEXOSs5mythA9MW2utJf3UCTfzOQP32j88iulom5GBgDo16Rq85A_V2rsO5X6EZC4EW1Az4bKyvhfeVmkK_qggxzgU9U850ggCT5zomslZVcQt1aho_Pcex89OedBarvh2wKabmSieuuGFCvIzi96j2rPg50AYlIWIoN3VLYqBO-r8aa0lP1q8jxFgQoDQcmvftdwWdM7alRtdtjcNAu-TiYOcc-BKNYLyonLwS9gxgUPjzZbsDuRBzFXHiQ6L7ejnJvBu73eXh14pkCH_T0Yoh9CNIZOy-srBm4xzBgjULEmN4kqiI7LFptxFCsGyF-9TaKO6eh9bE27i6tLHwUMp_V2ypvts0Oo2H0UUErSCOGSID4SLN6yS6INi8e9ouLELZmzUcIqR7493F3SCDVesQ-KsvQVUDXl5cPTt8OaT08yXpNRjnxRdz1Jv3p_ecxxygl_3VDRhKkgsi0n9xUJwmsPDA_saRSIT51SVfrhtj5yo2LIQrrYStEehxq5x1gB4LVVnJcvyVY')
+					// headers.set('Authorization', 'Basic ' + Base64.btoa(`${LoginKeyUserName}:${LoginKeyPassword}`))
+					fetch(APIUpdateLocation, {
+						method: 'POST',
+						headers: headers,
+						body: formdata
+					})
+						.then(res => {
+							console.warn(position.coords.latitude)
+						})
+						.catch(err =>console.log(err))
+				}
+			});
+		}, 10000)
 	}
 
 	/**
@@ -100,7 +146,7 @@ export default class HomeScreen extends Component {
 				padding: 10,
 				flexDirection: 'row'
 			}}>
-				<TouchableNativeFeedback disabled={item.disabled} onPress={this.renderMenuPress(item.path)}>
+				<TouchableNativeFeedback disabled={item.disabled || this.state.isLoading} onPress={this.renderMenuPress(item.path)}>
 					<View style={[{
 						flex: 1,
 						justifyContent: 'center',
@@ -148,54 +194,18 @@ export default class HomeScreen extends Component {
 	}
 
 	renderMenuPress = (path) => () => {
+		this.setState({ isLoading: true })
+		delay(100).then(() => this.setState({ isLoading: false }))
 		switch (path) {
 			case 'workOrder':
-				Actions.workOrder()
+				delay(100).then(() => Actions.workOrder())
 				break;
 			case 'setting':
-				Actions.setting()
+				delay(100).then(() => Actions.setting())
 				break;
 			default:
 				break;
 		}
-	}
-
-	/**
-	 * Render the Work Order List
-	 */
-	renderWorkOrder = ({ item, index }) => {
-		var action = ""
-		switch (item.order_action) {
-			case "1":
-				action = "Survey"
-				break;
-			case "2":
-				action = "Collection"
-				break;
-			case "3":
-				action = "Janji Bayar"
-				break;
-		}
-		return (
-			<TouchableNativeFeedback>
-				<View style={{ width: '100%', paddingVertical: 10, paddingHorizontal: SafeArea }}>
-					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_NOPK}</Text>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12, color: GrayColor, textAlign: 'right' }}>{item.order_time}</Text>
-					</View>
-					<View style={{ height: 50, width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
-						<View style={{ flex: 1, justifyContent: 'space-between' }}>
-							<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 14 }}>{item.order_customer_name}</Text>
-							<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_city} - {item.order_district}</Text>
-							<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_license_plate} - {item.order_unit_type}</Text>
-						</View>
-						<View style={{ height: '100%' }}>
-							<Text style={{ fontFamily: NunitoBold, fontSize: 14 }}>{action}</Text>
-						</View>
-					</View>
-				</View>
-			</TouchableNativeFeedback>
-		)
 	}
 
 	render() {

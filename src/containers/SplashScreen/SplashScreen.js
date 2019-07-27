@@ -2,34 +2,25 @@ import React, { Component } from 'react';
 import { Platform, StyleSheet, Text, Image, View, StatusBar, PermissionsAndroid, Dimensions, YellowBox } from 'react-native';
 import { Actions } from 'react-native-router-flux';
 import { PrimaryColorDark, WhiteColor, NunitoBold, Version, BlackColor } from '../../GlobalConfig';
-import AsyncStorage from '@react-native-community/async-storage';
+import { getUserData, delay } from '../../GlobalFunction';
 
 const logoPath = '../../images/logo.png'
 
 const { width } = Dimensions.get('screen')
 
 export default class SplashScreen extends Component {
+
 	/**
 	 * Get Account Credential
-	 * If the Driver has login open the Main Screen
 	 * else open the login screen
 	 */
-	getCredentialStatus = async () => {
-		// try {
-		// 	const value = await AsyncStorage.getItem('credentials')
-		// 	if (value == '1') {
-		// 		setTimeout(() => Actions.tab(), 2000)
-		// 	}
-		// 	else {
-		// 		setTimeout(() => Actions.login(), 2000)
-		// 	}
-		// } catch (e) {
-		// }
-		// setTimeout(() => {
-		// 	Actions.login()
-		// }, 2500)
-		setTimeout(() => Actions.login(), 2500)
-		// setTimeout(() => Actions.home(), 2500)
+	getCredentialStatus = () => {
+		delay(2000).then(() => {
+			// Actions.home()
+			getUserData().then(res => {
+				Actions.home()
+			}).catch(err => Actions.login())
+		})
 	}
 
 	requestSignature = async () => {
@@ -96,10 +87,7 @@ export default class SplashScreen extends Component {
 		await this.requestSignature()
 		await this.requestCameraPermission()
 		await this.requestGPSPermission()
-		// YellowBox.ignoreWarnings([
-		// 	'Warning: componentWillReceiveProps is deprecated',
-		// ]);
-		console.disableYellowBox = true;
+		// console.disableYellowBox = true;
 		this.getCredentialStatus()
 	}
 

@@ -1,19 +1,22 @@
 import React, { Component } from 'react';
 import { Platform, StyleSheet, Text, Image, View } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5'
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { PrimaryColorDark, WhiteColor, NunitoBold, BlackColor, GrayColor, SafeArea } from '../../GlobalConfig';
+import { getUserData } from '../../GlobalFunction';
 import Toast from 'react-native-root-toast';
 import { TouchableNativeFeedback } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-community/async-storage';
+import { delay } from '../../GlobalFunction';
+import { APILogout } from '../../APIConfig';
 
 export default class SettingScreen extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
-			errorMessage: '',
+			toastMessage: '',
 			visibleToast: false
 		}
 	}
@@ -25,26 +28,26 @@ export default class SettingScreen extends Component {
 				iconName = "autorenew"
 				iconType = "MaterialCommunityIcons"
 				title = 'Ubah kata sandi'
-				onClickFunction = () => {
-					// this.setState({
-					// 	errorMessage: 'In Progress',
-					// 	visibleToast: true
-					// })
-				}
-				// onClickFunction = () => Actions.detailSetting({ title: 'Ubah Kata Sandi' })
+				// onClickFunction = () => {
+				// 	this.setState({
+				// 		toastMessage: 'In Progress',
+				// 		visibleToast: true
+				// 	})
+				// }
+				onClickFunction = () => Actions.detailSetting({ title: 'Ubah Kata Sandi' })
 				// description = "Ubah kata sandi"
 				break;
 			case 'about':
 				iconName = "information-outline"
 				iconType = "MaterialCommunityIcons"
 				title = 'Tentang Aplikasi'
-				onClickFunction = () => {
-					// this.setState({
-					// 	errorMessage: 'In Progress',
-					// 	visibleToast: true
-					// })
-				}
-				// onClickFunction = () => Actions.detailSetting({ title: "Tentang Aplikasi" })
+				// onClickFunction = () => {
+				// 	this.setState({
+				// 		toastMessage: 'In Progress',
+				// 		visibleToast: true
+				// 	})
+				// }
+				onClickFunction = () => Actions.detailSetting({ title: "Tentang Aplikasi" })
 				break;
 			case 'logout':
 				iconName = "logout"
@@ -52,10 +55,22 @@ export default class SettingScreen extends Component {
 				title = 'Keluar Akun'
 				onClickFunction = () => {
 					this.setState({
-						errorMessage: 'Berhasil Keluar',
+						toastMessage: 'Berhasil Keluar',
 						visibleToast: true
 					})
-					setTimeout(() => Actions.login(), 1000)
+					getUserData().then(res => {
+						if (res) {
+							AsyncStorage.removeItem('user_data')
+							const headers = new Headers()
+							headers.set('Authorization', `${res.token_type} ${res.access_token}`)
+							fetch(APILogout, {
+								method: 'POST',
+								headers: headers
+							})
+								.then(res => res.status == 200 ? this.setState({ toastMessage: 'Berhasil Keluar', visibleToast: true }) : this.setState({ toastMessage: 'Gagal Keluar', visibleToast: true }))
+						}
+					}).catch(err => console.log(err))
+					delay(1000).then(() => Actions.splash())
 				}
 				break;
 		}
@@ -63,7 +78,7 @@ export default class SettingScreen extends Component {
 		switch (iconType) {
 			case 'MaterialCommunityIcons':
 				renderIcon = (
-					<View style={{ marginRight: 20 }}>
+					<View style={{ marginRight: SafeArea }}>
 						<MaterialCommunityIcons
 							name={iconName}
 							size={24}
@@ -73,7 +88,7 @@ export default class SettingScreen extends Component {
 				break;
 			case 'SimpleLineIcons':
 				renderIcon = (
-					<View style={{ marginRight: 24 }}>
+					<View style={{ marginRight: SafeArea + 4 }}>
 						<SimpleLineIcons
 							name={iconName}
 							size={20}
@@ -84,7 +99,7 @@ export default class SettingScreen extends Component {
 		}
 
 		return (
-			<TouchableNativeFeedback onPress={() => setTimeout(onClickFunction, 100)}>
+			<TouchableNativeFeedback onPress={() => delay(100).then(onClickFunction)}>
 				<View style={styles.labelInformationBox}>
 					{renderIcon}
 					<View style={{ flex: 1 }}>
@@ -95,12 +110,12 @@ export default class SettingScreen extends Component {
 						{type != 'logout' ?
 							<Entypo
 								name="chevron-thin-right"
-								size={24}
+								size={20}
 								color={GrayColor}
 							/> : null}
 					</View>
 				</View>
-			</TouchableNativeFeedback>
+			</TouchableNativeFeedback >
 		)
 	}
 
@@ -113,7 +128,7 @@ export default class SettingScreen extends Component {
 				<Toast
 					visible={this.state.visibleToast}
 					position={50}
-					children={<Text>{this.state.errorMessage}</Text>}
+					children={<Text>{this.state.toastMessage}</Text>}
 					animation
 					onShown={() => setTimeout(() => this.setState({ visibleToast: false }), 2000)}
 				/>

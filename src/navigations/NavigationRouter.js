@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import { Router, Scene, Stack, Tabs, Actions } from 'react-native-router-flux';
-import { TouchableNativeFeedback, View, Text, Platform, TouchableWithoutFeedback, Alert, BackHandler } from 'react-native';
+import { View, Text, Alert, BackHandler } from 'react-native';
 import { PrimaryColor, WhiteColor } from '../GlobalConfig';
-
-import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
 
 import SplashScreen from '../containers/SplashScreen/SplashScreen'
 import LoginScreen from '../containers/LoginScreen/LoginScreen'
@@ -109,7 +107,7 @@ export default class NavigationRouter extends Component {
 
 	renderTitle = (props) => {
 		return (
-			<View style={[{ width: 200 }, Platform.OS == 'android' ? { marginLeft: 4 } : { marginLeft: 10 }]}>
+			<View style={{ width: 200 }}>
 				<Text style={{ fontSize: 18, color: '#fff', letterSpacing: 1 }}>{props.title}</Text>
 			</View >
 		)
@@ -143,7 +141,6 @@ export default class NavigationRouter extends Component {
 		return (
 			<Router
 				navigationBarStyle={{ backgroundColor: PrimaryColor }}
-				// navBarButtonColor={WhiteColor}
 				barButtonIconStyle={{ tintColor: WhiteColor }}
 				backAndroidHandler={this.handleBack}
 			>
@@ -151,7 +148,7 @@ export default class NavigationRouter extends Component {
 					transitionConfig={transitionConfig}
 					key='root'>
 					<Scene
-						initial
+						// initial
 						// type='reset'
 						hideNavBar
 						key='splash'
@@ -163,7 +160,7 @@ export default class NavigationRouter extends Component {
 						key='login'
 						component={LoginScreen} />
 					<Scene
-						// initial
+						initial
 						type='reset'
 						hideNavBar
 						key='home'
@@ -202,6 +199,7 @@ export default class NavigationRouter extends Component {
 						key='requestJB'
 						component={RequestJBScreen} />
 					<Scene
+						// initial
 						back
 						backButtonTintColor={WhiteColor}
 						title="Work Order"

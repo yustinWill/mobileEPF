@@ -6,6 +6,7 @@ import { WebView } from 'react-native-webview';
 import { TouchableNativeFeedback } from 'react-native-gesture-handler';
 import Toast from 'react-native-root-toast';
 import { TabView, TabBar } from 'react-native-tab-view';
+import CustomButton from '../components/CustomButton';
 
 const { width } = Dimensions.get('screen')
 
@@ -14,8 +15,9 @@ class DokumenJB extends Component {
 		super(props)
 		this.state = {
 			isLoading: this.props.isLoading,
-			docUrl: 'http://calibre-ebook.com/downloads/demos/demo.docx',
-			errorMessage: '',
+			docUrl: this.props.docUrl,
+			// docUrl: 'http://calibre-ebook.com/downloads/demos/demo.docx',
+			toastMessage: '',
 			visibleToast: false
 		}
 	}
@@ -24,9 +26,9 @@ class DokumenJB extends Component {
 	 * Copy Document URL to Clipboard
 	 */
 	copyLinkUrl = () => {
-		Clipboard.setString(`https://docs.google.com/viewer?url=${this.state.docUrl}`)
+		Clipboard.setString(this.state.docUrl)
 		this.setState({
-			errorMessage: 'Tautan dokumen berhasil dikopi',
+			toastMessage: 'Tautan dokumen berhasil dikopi',
 			visibleToast: true
 		})
 	}
@@ -42,26 +44,21 @@ class DokumenJB extends Component {
 						</View> :
 						<WebView
 							incognito
-							source={{ uri: `https://docs.google.com/viewer?url=${this.state.docUrl}` }}
+							source={{ uri: this.state.docUrl }}
 							style={{ flex: 1 }}
 						/>}
 				</View>
 				<View style={{ width: '100%', paddingHorizontal: SafeArea, marginTop: 5 }}>
 					<View style={{ width: '100%', height: 2, backgroundColor: LightGrayColor }} />
 				</View>
-				<View style={{ width: '100%', height: 100, justifyContent: 'center', alignItems: 'center' }}>
-					<View style={styles.buttonBox}>
-						<TouchableNativeFeedback onPress={this.copyLinkUrl} style={styles.buttonShadowStyle}>
-							<View style={styles.buttonStyle}>
-								<Text style={styles.buttonText}>Copy Link Dokumen</Text>
-							</View>
-						</TouchableNativeFeedback>
-					</View>
-				</View>
+				<CustomButton
+					label="Salin Tautan Dokumen"
+					onPress={this.copyLinkUrl}
+				/>
 				<Toast
 					visible={this.state.visibleToast}
 					position={50}
-					children={<Text>{this.state.errorMessage}</Text>}
+					children={<Text>{this.state.toastMessage}</Text>}
 					animation
 					onShown={() => setTimeout(() => this.setState({ visibleToast: false }), 2000)}
 				/>
@@ -75,7 +72,7 @@ class SignatureJB extends Component {
 		super(props)
 		this.state = {
 			isLoading: true,
-			errorMessage: '',
+			toastMessage: '',
 			visibleToast: false,
 			signatureCLO: this.props.signatureCLO,
 			signatureCustomer: this.props.signatureCustomer
@@ -108,7 +105,7 @@ class SignatureJB extends Component {
 
 	confirmJanjiBayar = () => {
 		this.setState({
-			errorMessage: 'Pengajuan janji bayar telah berhasil dikirimkan',
+			toastMessage: 'Pengajuan janji bayar telah berhasil dikirimkan',
 			visibleToast: true
 		})
 		setTimeout(() => {
@@ -138,13 +135,10 @@ class SignatureJB extends Component {
 							<Image source={{ uri: `data:image/png;base64,${this.state.signatureCLO}` }} resizeMode="contain" style={{ flex: 1 }} />
 						</View>
 						{this.state.signatureCLO ? null :
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.openTakeSignatureScreen('signatureCLO')} style={styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										<Text style={styles.buttonText}>Ambil Tanda Tangan</Text>
-									</View>
-								</TouchableNativeFeedback>
-							</View>}
+							<CustomButton
+								label="Ambil Tanda Tangan"
+								onPress={this.openTakeSignatureScreen('signatureCLO')}
+							/>}
 					</View>
 					<View style={styles.informationBox}>
 						<Text style={styles.formTitle}>Tanda Tangan Customer</Text>
@@ -152,30 +146,22 @@ class SignatureJB extends Component {
 							<Image source={{ uri: `data:image/png;base64,${this.state.signatureCustomer}` }} resizeMode="contain" style={{ flex: 1 }} />
 						</View>
 						{this.state.signatureCustomer ? null :
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.openTakeSignatureScreen('signatureCustomer')} style={styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										<Text style={styles.buttonText}>Ambil Tanda Tangan</Text>
-									</View>
-								</TouchableNativeFeedback>
-							</View>}
+							<CustomButton
+								label="Ambil Tanda Tangan"
+								onPress={this.openTakeSignatureScreen('signatureCustomer')}
+							/>}
 					</View>
 					<View style={{ width: '100%', paddingHorizontal: SafeArea, marginTop: 5 }}>
 						<View style={{ width: '100%', height: 2, backgroundColor: LightGrayColor }} />
 					</View>
-					<View style={{ width: '100%', height: 100, justifyContent: 'center', alignItems: 'center' }}>
-						<View style={styles.buttonBox}>
-							<TouchableNativeFeedback onPress={this.confirmJanjiBayar} style={styles.buttonShadowStyle}>
-								<View style={styles.buttonStyle}>
-									<Text style={styles.buttonText}>Kirim Pengajuan Janji Bayar</Text>
-								</View>
-							</TouchableNativeFeedback>
-						</View>
-					</View>
+					<CustomButton
+						label="Kirim Pengajuan Janji Bayar"
+						onPress={this.confirmJanjiBayar}
+					/>
 					<Toast
 						visible={this.state.visibleToast}
 						position={50}
-						children={<Text>{this.state.errorMessage}</Text>}
+						children={<Text>{this.state.toastMessage}</Text>}
 						animation
 						onShown={() => setTimeout(() => this.setState({ visibleToast: false }), 2000)}
 					/>
@@ -224,6 +210,7 @@ export default class RequestJBScreen extends Component {
 	// }
 
 	componentDidMount() {
+		console.warn(this.props.docUrl)
 		setTimeout(() => {
 			this.setState({ isLoading: false })
 		}, 1000)
@@ -259,7 +246,10 @@ export default class RequestJBScreen extends Component {
 					renderScene={({ route }) => {
 						switch (route.key) {
 							case 'dokumenJB':
-								return <DokumenJB isLoading={this.state.isLoading} />;
+								return <DokumenJB
+									docUrl={this.props.docUrl}
+									isLoading={this.state.isLoading}
+								/>;
 							case 'signatureJB':
 								return <SignatureJB
 									signatureCLO={this.state.signatureCLO}

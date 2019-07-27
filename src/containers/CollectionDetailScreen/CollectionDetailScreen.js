@@ -1,16 +1,17 @@
 import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, Image, View, ActivityIndicator, Dimensions, ScrollView, Linking, TouchableOpacity, Picker, TextInput, Alert } from 'react-native';
+import { Platform, StyleSheet, Text, Image, View, ActivityIndicator, Dimensions, ScrollView, Linking, TouchableOpacity, Picker, TextInput, Alert, FlatList } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import { PrimaryColorDark, PrimaryColorLight, WhiteColor, NunitoBold, GrayColor, SafeArea, BlackColor, NunitoRegular, PrimaryColor, NunitoSemiBold, LightGrayColor } from '../../GlobalConfig';
+import { PrimaryColorDark, WhiteColor, NunitoBold, GrayColor, SafeArea, BlackColor, NunitoRegular, PrimaryColor, NunitoSemiBold, LightGrayColor } from '../../GlobalConfig';
 import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from '@react-native-community/async-storage';
-import { TouchableNativeFeedback, TouchableWithoutFeedback } from 'react-native-gesture-handler';
-import Geolocation from '@react-native-community/geolocation';
+import { getUserData, delay, toTitleCase } from '../../GlobalFunction';
+import call from 'react-native-phone-call'
 
 import { TabView, TabBar } from 'react-native-tab-view';
 import { trimDDMMYYYY, idr } from '../../GlobalFunction';
+import { APICategoryList, APIQuestionList, APIUpdateLocation, APIGenerateJB } from '../../APIConfig';
+import CustomButton from '../../components/CustomButton';
 
 const { width } = Dimensions.get('window')
 
@@ -235,18 +236,21 @@ class LaporanLapangan extends Component {
 		super(props)
 		this.state = {
 			selectedFieldCondition: null,
-			fieldChronology: '',
-			fieldResult: '',
+			// fieldChronology: '',
+			// fieldResult: '',
 			selectedRawDueDate: new Date(),
 			selectedDueDate: "",
-			selectedResultPrediction: null,
-			datePickerShow: false,
-			dateChosen: false,
-			locationLat: 0,
-			locationLong: 0,
-			isLoadingLocation : false,
+			selectedRawJanjiBayarDate: new Date(),
+			selectedJanjiBayarDate: "",
+			selectedRawJanjiBayarTime: new Date(),
+			selectedJanjiBayarTime: "",
+			// selectedResultPrediction: null,
+			datePickerDueDateShow: false,
+			datePickerJanjiBayarShow: false,
+			timePickerJanjiBayarShow: false,
 			locationSelfiePhoto: this.props.locationSelfiePhoto,
-			withCustomerPhoto: this.props.withCustomerPhoto
+			withCustomerPhoto: this.props.withCustomerPhoto,
+			questionList: []
 		}
 	}
 
@@ -261,39 +265,103 @@ class LaporanLapangan extends Component {
 				withCustomerPhoto: props.withCustomerPhoto,
 			};
 		}
+		if (props.questionList !== state.questionList) {
+			console.log(props.questionList)
+			return {
+				questionList: props.questionList,
+			};
+		}
 		return null;
 	}
 
 	/**
 	 * On Date Chosen
 	 */
-	setDate = (event, date) => {
+	setDate = field => (event, date) => {
 		if (date) {
 			let indonesiaMonth = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'October', 'November', 'Desember']
 			let day = date.getDate()
 			let month = date.getMonth()
 			let year = date.getFullYear()
-			this.setState({
-				datePickerShow: Platform.OS === 'ios' ? true : false,
-				selectedRawDueDate: date,
-				selectedDueDate: `${day} ${indonesiaMonth[month]} ${year}`,
-				dateChosen: true
-			});
+			if (field == 'dueDate') {
+				this.setState({
+					selectedRawDueDate: date,
+					selectedDueDate: `${day} ${indonesiaMonth[month]} ${year}`,
+					datePickerDueDateShow: false
+				});
+			}
+			else if (field == 'janjiBayar') {
+				this.setState({
+					selectedRawJanjiBayarDate: date,
+					selectedJanjiBayarDate: `${day} ${indonesiaMonth[month]} ${year}`,
+					datePickerJanjiBayarShow: false
+				});
+			}
+		}
+	}
+
+	/**
+	 * On Time Chosen
+	 */
+	setTime = field => (event, time) => {
+		if (time) {
+			if (field == 'janjiBayar') {
+				this.setState({
+					selectedRawJanjiBayarTime: time,
+					selectedJanjiBayarTime: String(time),
+					timePickerJanjiBayarShow: false
+				});
+			}
 		}
 	}
 
 	/**
 	 * Show the Date Picker
 	 */
-	datepicker = () => {
-		this.setState({
-			datePickerShow: true
-		});
+	datepicker = field => () => {
+		switch (field) {
+			case 'dueDate':
+				this.setState({
+					datePickerDueDateShow: true
+				});
+				break;
+			case 'janjiBayar':
+				this.setState({
+					datePickerJanjiBayarShow: true
+				});
+				break;
+		}
+	}
+
+	/**
+	 * Show the Date Picker
+	 */
+	timepicker = field => () => {
+		switch (field) {
+			case 'janjiBayar':
+				this.setState({
+					timePickerJanjiBayarShow: true
+				});
+				break;
+		}
+	}
+
+	onFormTypeChange = field => value => {
+		if (this.state.selectedFieldCondition) {
+			if(this.state.questionList[this.state.selectedFieldCondition]){
+				for (let i = 0; i < this.state.questionList[this.state.selectedFieldCondition].length; i++) {
+					this.setState({
+						[`form_answer_${i}`]: null
+					})
+				}
+			}
+		}
+		this.setState({ [field]: value })
 	}
 
 	onInputChange = field => value => this.setState({ [field]: value })
 
-	renderFieldCondition = (item, index) => <Picker.Item label={item.text} value={item.id} key={index} />
+	renderFieldCondition = (item, index) => <Picker.Item label={item.category_text} value={item.category_code} key={index} />
 
 	renderActionPlan = (item, index) => <Picker.Item label={item.text} value={item.id} key={index} />
 
@@ -310,41 +378,26 @@ class LaporanLapangan extends Component {
 		}
 	}
 
-	getCurrentLocation = () => {
-		this.setState({ isLoadingLocation: true })
-		setTimeout(() => {
-			Geolocation.getCurrentPosition(position => {
-				if (position.coords.latitude && position.coords.longitude) {
-					this.setState({
-						locationLat: position.coords.latitude,
-						locationLong: position.coords.longitude,
-						isLoadingLocation: false
-					})
-				}
-			});
-		}, 2000)
-	}
-
 	submitForm = () => {
-		Alert.alert(
-			'Kirim Laporan',
-			'Kirim laporan?',
-			[
-				{
-					text: 'Tidak',
-					onPress: () => console.log('Cancel Pressed'),
-					style: 'cancel',
-				},
-				{
-					text: 'Ya',
-					onPress: () => {
-						Actions.pop()
-						setTimeout(() => Actions.refresh({ lastUpdated: new Date() }), 0)
-					}
-				},
-			],
-			{ cancelable: false },
-		);
+		// Alert.alert(
+		// 	'Kirim Laporan',
+		// 	'Kirim laporan?',
+		// 	[
+		// 		{
+		// 			text: 'Tidak',
+		// 			onPress: () => console.log('Cancel Pressed'),
+		// 			style: 'cancel',
+		// 		},
+		// 		{
+		// 			text: 'Ya',
+		// 			onPress: () => {
+		// 				Actions.pop()
+		// 				setTimeout(() => Actions.refresh({ lastUpdated: new Date() }), 0)
+		// 			}
+		// 		},
+		// 	],
+		// 	{ cancelable: false },
+		// );
 	}
 
 	requestJanjiBayar = () => {
@@ -359,18 +412,34 @@ class LaporanLapangan extends Component {
 				},
 				{
 					text: 'Ya', onPress: () => {
-						Actions.requestJB({
-							selectedFieldCondition: this.state.selectedFieldCondition,
-							fieldChronology: this.state.fieldChronology,
-							fieldResult: this.state.fieldResult,
-							selectedRawDueDate: this.state.selectedRawDueDate,
-							selectedDueDate: this.state.selectedDueDate,
-							selectedResultPrediction: this.state.selectedResultPrediction,
-							locationLat: this.state.locationLat,
-							locationLong: this.state.locationLong,
-							locationSelfiePhoto: this.state.locationSelfiePhoto,
-							withCustomerPhoto: this.state.withCustomerPhoto
+						const formdata = new FormData()
+						formdata.append('date', '2019-08-01')
+						formdata.append('time', '10:00')
+						formdata.append('work_order_code', 'WO1907271054230070000')
+						const headers = new Headers()
+						headers.set('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImE4ZTA3ZjcxMjE1MWY2NjNlYmY0YjNhYThjODBmMjY5ZmQyMjRmYTlmYTBjOGU5YzFmMTAzZDhlNTZiN2ZmYzc2NWVjZGYwN2ZlMzYxNWViIn0.eyJhdWQiOiIyIiwianRpIjoiYThlMDdmNzEyMTUxZjY2M2ViZjRiM2FhOGM4MGYyNjlmZDIyNGZhOWZhMGM4ZTljMWYxMDNkOGU1NmI3ZmZjNzY1ZWNkZjA3ZmUzNjE1ZWIiLCJpYXQiOjE1NjM4NjIwMzIsIm5iZiI6MTU2Mzg2MjAzMiwiZXhwIjoxNTk1NDg0NDMyLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Y7OSPc3xBYCGn4I0w_aRkW2mg26Po700NVPtGFoDyrYAGJryzgqpQSJi9DjaK7v5BRh2ae7nVTlXdvVz4_r8gchtCY9d-ffTDOprU8SnxMOl9j9-Wq565FfnKGEY90kOXgVEEmTen0FKatbAgOqqTjFSudMe2qkAEXOSs5mythA9MW2utJf3UCTfzOQP32j88iulom5GBgDo16Rq85A_V2rsO5X6EZC4EW1Az4bKyvhfeVmkK_qggxzgU9U850ggCT5zomslZVcQt1aho_Pcex89OedBarvh2wKabmSieuuGFCvIzi96j2rPg50AYlIWIoN3VLYqBO-r8aa0lP1q8jxFgQoDQcmvftdwWdM7alRtdtjcNAu-TiYOcc-BKNYLyonLwS9gxgUPjzZbsDuRBzFXHiQ6L7ejnJvBu73eXh14pkCH_T0Yoh9CNIZOy-srBm4xzBgjULEmN4kqiI7LFptxFCsGyF-9TaKO6eh9bE27i6tLHwUMp_V2ypvts0Oo2H0UUErSCOGSID4SLN6yS6INi8e9ouLELZmzUcIqR7493F3SCDVesQ-KsvQVUDXl5cPTt8OaT08yXpNRjnxRdz1Jv3p_ecxxygl_3VDRhKkgsi0n9xUJwmsPDA_saRSIT51SVfrhtj5yo2LIQrrYStEehxq5x1gB4LVVnJcvyVY')
+						fetch(APIGenerateJB, {
+							method: 'POST',
+							headers: headers,
+							body: formdata
 						})
+							.then(res => res.json())
+							.then(resJson => {
+								Actions.requestJB({
+									docUrl: resJson.data.webview_link,
+									selectedFieldCondition: this.state.selectedFieldCondition,
+									fieldChronology: this.state.fieldChronology,
+									fieldResult: this.state.fieldResult,
+									selectedRawDueDate: this.state.selectedRawDueDate,
+									selectedDueDate: this.state.selectedDueDate,
+									selectedResultPrediction: this.state.selectedResultPrediction,
+									locationLat: this.state.locationLat,
+									locationLong: this.state.locationLong,
+									locationSelfiePhoto: this.state.locationSelfiePhoto,
+									withCustomerPhoto: this.state.withCustomerPhoto
+								})
+							})
+							.catch(err => alert('gagal membuat Janji Bayar'))
 					}
 				},
 			],
@@ -378,23 +447,100 @@ class LaporanLapangan extends Component {
 		);
 	}
 
+	toggleRadio = (i, bool) => () => this.setState({ [`form_answer_${i}`]: bool })
+
+	renderQuestionList = ({ item, index }) => {
+		switch (item.question_type) {
+			case 1:
+				return (
+					<View style={styles.formBox}>
+						<Text style={styles.formTitle}>{toTitleCase(item.question_text)}</Text>
+						{item.question_text_helper ? <Text style={styles.formHelper}>{toTitleCase(item.question_text_helper)}</Text> : null}
+						<Picker
+							selectedValue={this.state[`form_answer_${index}`]}
+							style={{ height: 50, width: '100%' }}
+							itemStyle={{ fontFamily: NunitoRegular }}
+							onValueChange={this.onInputChange(`form_answer_${index}`)}>
+							<Picker.Item label="Pilih jawaban" value="" />
+							{item.question_options.map((val, i) => <Picker.Item label={val} value={val} key={i} />)}
+						</Picker>
+					</View>
+				)
+			case 2:
+				return (
+					<View style={styles.formBox}>
+						<Text style={styles.formTitle}>{toTitleCase(item.question_text)}</Text>
+						{item.question_text_helper ? <Text style={styles.formHelper}>{toTitleCase(item.question_text_helper)}</Text> : null}
+						<TextInput
+							style={{ height: 50, width: '100%', fontSize: 14, borderBottomColor: BlackColor, borderBottomWidth: 0.5 }}
+							placeholder="Isi jawaban disini.."
+							placeholderTextColor={GrayColor}
+							selectionColor={PrimaryColorDark}
+							value={this.state[`form_answer_${index}`]}
+							onChangeText={this.onInputChange(`form_answer_${index}`)} />
+						<Text style={{ textAlign: 'right', fontSize: 10 }}>{this.state[`form_answer_${index}`] ? this.state[`form_answer_${index}`].length : '0'} / 5000</Text>
+					</View>
+				)
+			case 3:
+				return (
+					<View style={styles.formBox}>
+						<Text style={styles.formTitle}>{toTitleCase(item.question_text)}</Text>
+						{item.question_text_helper ? <Text style={styles.formHelper}>{toTitleCase(item.question_text_helper)}</Text> : null}
+						<View style={{ height: 50, width: '100%', flexDirection: 'row', alignItems: 'center' }}>
+							<View style={{ height: 20, flexDirection: 'row', alignItems: 'center', marginRight: SafeArea }}>
+								<TouchableOpacity style={{ marginRight: 10 }} onPress={this.toggleRadio(index, true)}>
+									<MaterialCommunityIcons
+										color={PrimaryColor}
+										size={24}
+										name={this.state[`form_answer_${index}`] ? `radiobox-marked` : `radiobox-blank`}
+									/>
+								</TouchableOpacity>
+								<Text style={styles.formOption}>YA</Text>
+							</View>
+							<View style={{ height: 20, flexDirection: 'row', alignItems: 'center' }}>
+								<TouchableOpacity style={{ marginRight: 10 }} onPress={this.toggleRadio(index, false)}>
+									<MaterialCommunityIcons
+										color={PrimaryColor}
+										size={24}
+										name={this.state[`form_answer_${index}`] == false ? `radiobox-marked` : `radiobox-blank`}
+									/>
+								</TouchableOpacity>
+								<Text style={styles.formOption}>TIDAK</Text>
+							</View>
+						</View>
+					</View>
+				)
+			default:
+				break;
+		}
+	}
+
 	render() {
+		const listHeader = (
+			<View style={styles.formBox}>
+				<Text style={styles.formTitle}>Kondisi Lapangan</Text>
+				<Picker
+					selectedValue={this.state.selectedFieldCondition}
+					style={{ height: 50, width: '100%' }}
+					itemStyle={{ fontFamily: NunitoRegular }}
+					onValueChange={this.onFormTypeChange('selectedFieldCondition')}>
+					<Picker.Item label="Pilih kondisi lapangan" value="" />
+					{this.props.fieldCondition ? this.props.fieldCondition.map(this.renderFieldCondition) : null}
+				</Picker>
+			</View>
+		)
 		if (this.props.customerData) {
 			return (
 				<ScrollView style={{ flex: 1, backgroundColor: WhiteColor }}>
 					<View style={{ paddingVertical: 10 }}>
-						<View style={styles.informationBox}>
-							<Text style={styles.formTitle}>Kondisi Lapangan</Text>
-							<Picker
-								selectedValue={this.state.selectedFieldCondition}
-								style={{ height: 50, width: '100%' }}
-								itemStyle={{ fontFamily: NunitoRegular }}
-								onValueChange={this.onInputChange('selectedFieldCondition')}>
-								<Picker.Item label="Pilih kondisi lapangan" value="" />
-								{this.props.fieldCondition ? this.props.fieldCondition.map(this.renderFieldCondition) : null}
-							</Picker>
-						</View>
-						<View style={styles.informationBox}>
+						<FlatList
+							ListHeaderComponent={listHeader}
+							data={this.state.questionList[this.state.selectedFieldCondition]}
+							extraData={this.state.questionList[this.state.selectedFieldCondition]}
+							keyExtractor={(item, index) => String(index)}
+							renderItem={this.renderQuestionList}
+						/>
+						{/* <View style={styles.formBox}>
 							<Text style={styles.formTitle}>Kronologis</Text>
 							<TextInput
 								multiline
@@ -408,7 +554,7 @@ class LaporanLapangan extends Component {
 								onChangeText={this.onInputChange('fieldChronology')} />
 							<Text style={{ textAlign: 'right', fontSize: 10 }}>{this.state.fieldChronology.length} / 5000</Text>
 						</View>
-						<View style={styles.informationBox}>
+						<View style={styles.formBox}>
 							<Text style={styles.formTitle}>Hasil</Text>
 							<TextInput
 								multiline
@@ -421,10 +567,10 @@ class LaporanLapangan extends Component {
 								maxLength={5000}
 								onChangeText={this.onInputChange('fieldResult')} />
 							<Text style={{ textAlign: 'right', fontSize: 10 }}>{this.state.fieldResult.length} / 5000</Text>
-						</View>
-						<View style={styles.informationBox}>
+						</View> */}
+						<View style={styles.formBox}>
 							<Text style={styles.formTitle}>Due Date</Text>
-							{this.state.dateChosen ?
+							{this.state.selectedDueDate ?
 								<TextInput
 									editable={false}
 									style={{ height: 50, width: '100%', fontSize: 14, marginBottom: 10 }}
@@ -432,15 +578,12 @@ class LaporanLapangan extends Component {
 									placeholderTextColor={GrayColor}
 									selectionColor={PrimaryColorDark}
 									value={this.state.selectedDueDate} /> : null}
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.datepicker} style={styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										<Text style={styles.buttonText}>{this.state.dateChosen ? "Ubah Tanggal" : "Pilih Tanggal"}</Text>
-									</View>
-								</TouchableNativeFeedback>
-							</View>
+							<CustomButton
+								label={this.state.selectedDueDate ? "Ubah Tanggal" : "Pilih Tanggal"}
+								onPress={this.datepicker('dueDate')}
+							/>
 						</View>
-						<View style={styles.informationBox}>
+						{/* <View style={styles.formBox}>
 							<Text style={styles.formTitle}>Action Plan</Text>
 							<Picker
 								selectedValue={this.state.selectedActionPlan}
@@ -451,7 +594,7 @@ class LaporanLapangan extends Component {
 								{this.props.fieldCondition ? this.props.fieldCondition.map(this.renderFieldCondition) : null}
 							</Picker>
 						</View>
-						<View style={styles.informationBox}>
+						<View style={styles.formBox}>
 							<Text style={styles.formTitle}>Prediksi Hasil</Text>
 							<Picker
 								selectedValue={this.state.selectedResultPrediction}
@@ -461,69 +604,93 @@ class LaporanLapangan extends Component {
 								<Picker.Item label="Pilih prediksi hasil" value="" />
 								{this.props.resultPrediction ? this.props.resultPrediction.map(this.renderResultPrediction) : null}
 							</Picker>
-						</View>
-						<View style={styles.informationBox}>
-							<Text style={styles.formTitle}>Lokasi Saat Ini</Text>
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.getCurrentLocation} disabled={this.state.locationLat ? true : false} style={this.state.locationLat ? null : styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										{this.state.isLoadingLocation ?
-										<ActivityIndicator color={WhiteColor} /> :
-										<Text style={[styles.buttonText, this.state.locationLat ? { color: BlackColor } : null]}>{this.state.locationLat ? `${this.state.locationLat}, ${this.state.locationLong}` : "Dapatkan Lokasi Saat Ini"}</Text>}
-									</View>
-								</TouchableNativeFeedback>
-							</View>
-						</View>
-						<View style={styles.informationBox}>
+						</View> */}
+						<View style={styles.formBox}>
 							<Text style={styles.formTitle}>Foto Pada Lokasi</Text>
 							<View style={{ width: width - 30, height: width - 30, borderWidth: 2, borderColor: BlackColor }}>
 								<Image source={{ uri: this.state.locationSelfiePhoto }} resizeMode="contain" style={{ flex: 1 }} />
 							</View>
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.openTakePictureScreen('locationSelfie')} style={styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										<Text style={styles.buttonText}>{this.state.locationSelfiePhoto ? "Ambil Ulang Foto" : "Ambil Foto"}</Text>
-									</View>
-								</TouchableNativeFeedback>
-							</View>
+							<CustomButton
+								label={this.state.locationSelfiePhoto ? "Ambil Ulang Foto" : "Ambil Foto"}
+								onPress={this.openTakePictureScreen('locationSelfie')}
+							/>
 						</View>
-						<View style={styles.informationBox}>
+						<View style={[styles.formBox, { borderBottomWidth: 0 }]}>
 							<Text style={styles.formTitle}>Foto Dengan Customer</Text>
 							<View style={{ width: width - 30, height: width - 30, borderWidth: 2, borderColor: BlackColor }}>
 								<Image source={{ uri: this.state.withCustomerPhoto }} resizeMode="contain" style={{ flex: 1 }} />
 							</View>
-							<View style={[styles.buttonBox, { paddingHorizontal: 0 }]}>
-								<TouchableNativeFeedback onPress={this.openTakePictureScreen('withCustomer')} style={styles.buttonShadowStyle}>
-									<View style={styles.buttonStyle}>
-										<Text style={styles.buttonText}>{this.state.withCustomerPhoto ? "Ambil Ulang Foto" : "Ambil Foto"}</Text>
-									</View>
-								</TouchableNativeFeedback>
-							</View>
+							<CustomButton
+								label={this.state.withCustomerPhoto ? "Ambil Ulang Foto" : "Ambil Foto"}
+								onPress={this.openTakePictureScreen('withCustomer')}
+							/>
 						</View>
 						<View style={{ width: '100%', paddingHorizontal: SafeArea, marginBottom: SafeArea, marginTop: 5 }}>
 							<View style={{ width: '100%', height: 2, backgroundColor: LightGrayColor }} />
 						</View>
-						<View style={styles.buttonBox}>
-							<TouchableNativeFeedback onPress={this.submitForm} style={styles.buttonShadowStyle}>
-								<View style={styles.buttonStyle}>
-									<Text style={styles.buttonText}>Kirim Laporan</Text>
-								</View>
-							</TouchableNativeFeedback>
+						<CustomButton
+							disabled={this.state.selectedDueDate ? false : true}
+							label="Kirim Laporan"
+							onPress={this.submitForm}
+						/>
+						<View style={[styles.formBox, { paddingTop: 10, marginTop: 10, borderTopColor: GrayColor, borderTopWidth: 1, borderBottomWidth: 0 }]}>
+							<Text style={styles.formTitle}>Tanggal Janji Bayar</Text>
+							{this.state.selectedJanjiBayarDate ?
+								<TextInput
+									editable={false}
+									style={{ height: 50, width: '100%', fontSize: 14, marginBottom: 10 }}
+									placeholder="Pilih tanggal"
+									placeholderTextColor={GrayColor}
+									selectionColor={PrimaryColorDark}
+									value={this.state.selectedJanjiBayarDate} /> : null}
+							<CustomButton
+								label={this.state.selectedJanjiBayar ? "Ubah Tanggal" : "Pilih Tanggal"}
+								onPress={this.datepicker('janjiBayar')}
+							/>
 						</View>
-						<View style={styles.buttonBox}>
-							<TouchableNativeFeedback onPress={this.requestJanjiBayar} style={styles.buttonShadowStyle}>
-								<View style={styles.buttonStyle}>
-									<Text style={styles.buttonText}>Ajukan Janji Bayar</Text>
-								</View>
-							</TouchableNativeFeedback>
+						<View style={[styles.formBox, { paddingTop: 10, marginTop: 10, borderTopColor: GrayColor, borderTopWidth: 1, borderBottomWidth: 0 }]}>
+							<Text style={styles.formTitle}>Waktu Janji Bayar</Text>
+							{this.state.selectedJanjiBayarTime ?
+								<TextInput
+									editable={false}
+									style={{ height: 50, width: '100%', fontSize: 14, marginBottom: 10 }}
+									placeholder="Pilih tanggal"
+									placeholderTextColor={GrayColor}
+									selectionColor={PrimaryColorDark}
+									value={this.state.selectedJanjiBayarTime} /> : null}
+							<CustomButton
+								label={this.state.selectedJanjiBayarTime ? "Ubah Waktu" : "Pilih Waktu"}
+								onPress={this.timepicker('janjiBayar')}
+							/>
 						</View>
+						<View style={{ width: '100%', paddingHorizontal: SafeArea, marginBottom: SafeArea, marginTop: 5 }}>
+							<View style={{ width: '100%', height: 2, backgroundColor: LightGrayColor }} />
+						</View>
+						<CustomButton
+							// disabled={this.state.selectedJanjiBayar && this.state.selectedRawJanjiBayarTime ? false : true}
+							label="Ajukan Janji Bayar"
+							onPress={this.requestJanjiBayar}
+						/>
 					</View>
-					{this.state.datePickerShow ?
+					{this.state.datePickerDueDateShow ?
 						<DateTimePicker
 							value={this.state.selectedRawDueDate}
 							mode="date"
 							display="calendar"
-							onChange={this.setDate} /> : null}
+							onChange={this.setDate('dueDate')} /> : null}
+					{this.state.datePickerJanjiBayarShow ?
+						<DateTimePicker
+							value={this.state.selectedRawJanjiBayarDate}
+							mode="date"
+							display="calendar"
+							onChange={this.setDate('janjiBayar')} /> : null}
+					{this.state.timePickerJanjiBayarShow ?
+						<DateTimePicker
+							is24Hour
+							value={this.state.selectedRawJanjiBayarTime}
+							mode="time"
+							display="spinner"
+							onChange={this.setTime('janjiBayar')} /> : null}
 				</ScrollView>
 			);
 		}
@@ -692,12 +859,7 @@ export default class CollectionDetailScreen extends Component {
 				{ key: 'keteranganUnit', title: 'Keterangan Unit' },
 				{ key: 'laporanLapangan', title: 'Laporan Lapangan' },
 			],
-			fieldCondition: [
-				{ id: '1', text: 'A1 - Konsumen ada dan unit ada' },
-				{ id: '2', text: 'A2 - Konsumen ada dan unit tidak ada' },
-				{ id: '3', text: 'A3 - Konsumen tidak ada dan unit ada' },
-				{ id: '4', text: 'A4 - Konsumen tidak ada dan unit tidak ada' }
-			],
+			fieldCondition: [],
 			actionPlan: [
 				{ id: '1', text: 'i. Pemberian surat peringatan' },
 				{ id: '2', text: 'ii. Surat peringatan 2 SPV turun mendampingi' },
@@ -711,52 +873,15 @@ export default class CollectionDetailScreen extends Component {
 				{ id: '3', text: 'TIDAK BAYAR' },
 				{ id: '4', text: 'JANJI BAYAR' }
 			],
-
-			// customer_nopk : '400000845',
-			// customer_name : 'ETI ARYAWATI',
-			// customer_phone : '085811182509',
-			// customer_address : 'JL MUJAIR I NO 140 RT/RW 005/010 KEL KARAAWACI BARU KEC KARAWACI',
-			// customer_actual_address : 'JL MUJAIR I NO 140 RT/RW 005/010 KEL KARAAWACI BARU KEC KARAWACI',
-			// customer_city : 'TANGERANG',
-			// customer_district : 'TANGERANG',
-			// customer_sub_district : 'KARAWACI BARU',
-			// customer_postal_code : '15118',
-			// payment_jatuh_tempo_akhir : '2019-08-10',
-			// payment_tenor : '18',
-			// payment_angsuran_ke : '02',
-			// payment_sisa_tenor : '16',
-			// payment_kwitansi_tertunggak : '0',
-			// payment_kwitansi : '',
-			// payment_bucket_awal : '',
-			// payment_telat_hari : '',
-			// payment_bucket_akhir : '1. Current',
-			// payment_installment : '666700',
-			// payment_amount_due : '0',
-			// payment_collected_all : '0',
-			// payment_collected_due : '0',
-			// payment_os_balance : '11333900',
-			// payment_os_akhir : '10667200',
-			// payment_denda_berjalan : '0',
-			// history_payment_method_1 : 'KANTOR',
-			// history_payment_date_1 : '2019-05-11',
-			// history_payment_method_2 : '',
-			// history_payment_date_2 : '',
-			// history_payment_method_3 : '',
-			// history_payment_date_3 : '',
-			// history_payment_method_4 : '',
-			// history_payment_date_4 : '',
-			// unit_bkode : '2MBTT',
-			// unit_no_polisi : 'B1599COS',
-			// unit_no_mesin : '3NRH210312',
-			// unit_no_rangka : 'MHKA6GJ6JJ066584',
-			// unit_stnk : 'ETI ARYAWATI',
-			// unit_jenis : 'TOYOTA CHEVROLET SPA',
-			// unit_merk : 'CAYLA " 2018',
-			// unit_year : '2018',
+			questionList: [],
+			user_id: null,
+			token_type: '',
+			user_token: '',
 			customerData: null,
 			isLoading: true,
 			locationSelfiePhoto: null,
-			withCustomerPhoto: null
+			withCustomerPhoto: null,
+			needLogin: false
 		}
 	}
 
@@ -774,55 +899,84 @@ export default class CollectionDetailScreen extends Component {
 		return null;
 	}
 
+	toLogin = () => {
+		Actions.login()
+	}
+
 	componentDidMount() {
-		setTimeout(() => {
-			this.setState({
-				customerData: {
-					customer_nopk: '400000557',
-					customer_name: 'NENENG',
-					customer_phone: '081289662229',
-					customer_address: 'KP JATI RT/RW 003/001 KEL JATIUWUNG KEC CIBODAS',
-					customer_actual_address: 'KP JATI RT/RW 003/001 KEL JATIUWUNG KEC CIBODAS',
-					customer_city: 'JATIUWUNG',
-					customer_district: 'JATIUWUNG',
-					customer_sub_district: 'TANGERANG',
-					customer_postal_code: '15138',
-					payment_jatuh_tempo_akhir: '2019-07-21',
-					payment_tenor: '12',
-					payment_angsuran_ke: '04',
-					payment_sisa_tenor: '8',
-					payment_kwitansi_tertunggak: '1',
-					payment_kwitansi: '05-05',
-					payment_bucket_awal: '1. Current',
-					payment_telat_hari: '',
-					payment_bucket_akhir: '1. Current',
-					payment_installment: '4264200',
-					payment_amount_due: '4264200',
-					payment_collected_all: '4264200',
-					payment_collected_due: '4264200',
-					payment_os_balance: '38377800',
-					payment_os_akhir: '34113600',
-					payment_denda_berjalan: '191900',
-					history_payment_method_1: 'TRANSFER',
-					history_payment_date_1: '2019-06-27',
-					history_payment_method_2: 'TRANSFER',
-					history_payment_date_2: '2019-05-24',
-					history_payment_method_3: 'TRANSFER',
-					history_payment_date_3: '2019-04-22',
-					history_payment_method_4: 'TRANSFER',
-					history_payment_date_4: '2019-03-21',
-					unit_bkode: '2SNNN',
-					unit_no_polisi: 'B1320CFN',
-					unit_no_mesin: 'HR15973150A',
-					unit_no_rangka: 'MHB1CG1ABJ053883',
-					unit_stnk: 'SERLI YUNITA WIJAYA',
-					unit_jenis: 'NISSAN SEDAN',
-					unit_merk: 'GRAND LIVINA',
-					unit_year: '2011'
-				},
-				isLoading: false
-			})
-		}, 500)
+		getUserData().then(res => {
+			if (res) {
+				this.setState({
+					user_id: res.user_id,
+					token_type: res.token_type,
+					user_token: res.access_token
+				})
+				console.log(res)
+				const headers = new Headers()
+				headers.set('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImE4ZTA3ZjcxMjE1MWY2NjNlYmY0YjNhYThjODBmMjY5ZmQyMjRmYTlmYTBjOGU5YzFmMTAzZDhlNTZiN2ZmYzc2NWVjZGYwN2ZlMzYxNWViIn0.eyJhdWQiOiIyIiwianRpIjoiYThlMDdmNzEyMTUxZjY2M2ViZjRiM2FhOGM4MGYyNjlmZDIyNGZhOWZhMGM4ZTljMWYxMDNkOGU1NmI3ZmZjNzY1ZWNkZjA3ZmUzNjE1ZWIiLCJpYXQiOjE1NjM4NjIwMzIsIm5iZiI6MTU2Mzg2MjAzMiwiZXhwIjoxNTk1NDg0NDMyLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Y7OSPc3xBYCGn4I0w_aRkW2mg26Po700NVPtGFoDyrYAGJryzgqpQSJi9DjaK7v5BRh2ae7nVTlXdvVz4_r8gchtCY9d-ffTDOprU8SnxMOl9j9-Wq565FfnKGEY90kOXgVEEmTen0FKatbAgOqqTjFSudMe2qkAEXOSs5mythA9MW2utJf3UCTfzOQP32j88iulom5GBgDo16Rq85A_V2rsO5X6EZC4EW1Az4bKyvhfeVmkK_qggxzgU9U850ggCT5zomslZVcQt1aho_Pcex89OedBarvh2wKabmSieuuGFCvIzi96j2rPg50AYlIWIoN3VLYqBO-r8aa0lP1q8jxFgQoDQcmvftdwWdM7alRtdtjcNAu-TiYOcc-BKNYLyonLwS9gxgUPjzZbsDuRBzFXHiQ6L7ejnJvBu73eXh14pkCH_T0Yoh9CNIZOy-srBm4xzBgjULEmN4kqiI7LFptxFCsGyF-9TaKO6eh9bE27i6tLHwUMp_V2ypvts0Oo2H0UUErSCOGSID4SLN6yS6INi8e9ouLELZmzUcIqR7493F3SCDVesQ-KsvQVUDXl5cPTt8OaT08yXpNRjnxRdz1Jv3p_ecxxygl_3VDRhKkgsi0n9xUJwmsPDA_saRSIT51SVfrhtj5yo2LIQrrYStEehxq5x1gB4LVVnJcvyVY')
+				// headers.set('Authorization', `${res.token_type} ${res.access_token}`)
+				fetch(APICategoryList, {
+					method: 'GET',
+					headers: headers
+				})
+					.then(res => res.json())
+					.then(resJson => this.setState({ fieldCondition: resJson.data.categories }))
+					.catch(err => console.log(err))
+				fetch(APIQuestionList, {
+					method: 'GET',
+					headers: headers
+				})
+					.then(res => res.json())
+					.then(resJson => this.setState({ questionList: resJson.data.questions }))
+					.catch(err => console.log(err))
+			}
+		}).catch(err => this.setState({ needLogin: true }))
+		delay(500).then(() => this.setState({
+			customerData: {
+				customer_nopk: '400000557',
+				customer_name: 'NENENG',
+				customer_phone: '081289662229',
+				customer_address: 'KP JATI RT/RW 003/001 KEL JATIUWUNG KEC CIBODAS',
+				customer_actual_address: 'KP JATI RT/RW 003/001 KEL JATIUWUNG KEC CIBODAS',
+				customer_city: 'JATIUWUNG',
+				customer_district: 'JATIUWUNG',
+				customer_sub_district: 'TANGERANG',
+				customer_postal_code: '15138',
+				payment_jatuh_tempo_akhir: '2019-07-21',
+				payment_tenor: '12',
+				payment_angsuran_ke: '04',
+				payment_sisa_tenor: '8',
+				payment_kwitansi_tertunggak: '1',
+				payment_kwitansi: '05-05',
+				payment_bucket_awal: '1. Current',
+				payment_telat_hari: '',
+				payment_bucket_akhir: '1. Current',
+				payment_installment: '4264200',
+				payment_amount_due: '4264200',
+				payment_collected_all: '4264200',
+				payment_collected_due: '4264200',
+				payment_os_balance: '38377800',
+				payment_os_akhir: '34113600',
+				payment_denda_berjalan: '191900',
+				history_payment_method_1: 'TRANSFER',
+				history_payment_date_1: '2019-06-27',
+				history_payment_method_2: 'TRANSFER',
+				history_payment_date_2: '2019-05-24',
+				history_payment_method_3: 'TRANSFER',
+				history_payment_date_3: '2019-04-22',
+				history_payment_method_4: 'TRANSFER',
+				history_payment_date_4: '2019-03-21',
+				unit_bkode: '2SNNN',
+				unit_no_polisi: 'B1320CFN',
+				unit_no_mesin: 'HR15973150A',
+				unit_no_rangka: 'MHB1CG1ABJ053883',
+				unit_stnk: 'SERLI YUNITA WIJAYA',
+				unit_jenis: 'NISSAN SEDAN',
+				unit_merk: 'GRAND LIVINA',
+				unit_year: '2011'
+			},
+			isLoading: false
+		}))
 	}
 
 	render() {
@@ -831,6 +985,17 @@ export default class CollectionDetailScreen extends Component {
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
 					<ActivityIndicator color={PrimaryColorDark} />
 					<Text style={{ fontFamily: NunitoBold, letterSpacing: 1, color: BlackColor, fontSize: 12, marginTop: 10 }}>Memuat Data</Text>
+				</View>
+			)
+		}
+		else if (this.state.needLogin) {
+			return (
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					<Text style={{ fontFamily: NunitoBold, letterSpacing: 1, color: BlackColor, fontSize: 12, marginTop: 10 }}>Kredensial Kadaluarsa</Text>
+					<CustomButton
+						label="Masuk Ulang"
+						onPress={this.toLogin}
+					/>
 				</View>
 			)
 		}
@@ -866,10 +1031,14 @@ export default class CollectionDetailScreen extends Component {
 								return <KeteranganUnit customerData={this.state.customerData} />;
 							case 'laporanLapangan':
 								return <LaporanLapangan
+									user_id={this.state.user_id}
+									token_type={this.state.token_type}
+									user_token={this.state.access_token}
 									locationSelfiePhoto={this.state.locationSelfiePhoto}
 									locationWithCustomerPhoto={this.state.locationWithCustomerPhoto}
 									customerData={this.state.customerData}
 									fieldCondition={this.state.fieldCondition}
+									questionList={this.state.questionList}
 									actionPlan={this.state.actionPlan}
 									resultPrediction={this.state.resultPrediction}
 									isLoading={this.state.isLoading} />;
@@ -957,9 +1126,28 @@ const styles = StyleSheet.create({
 		fontFamily: NunitoBold,
 		letterSpacing: 1
 	},
+	formBox: {
+		width: '100%',
+		paddingHorizontal: SafeArea,
+		paddingBottom: 10,
+		borderBottomWidth: 1,
+		borderBottomColor: GrayColor,
+		marginBottom: 10
+	},
 	formTitle: {
-		fontSize: 12,
+		fontSize: 16,
 		fontFamily: NunitoBold,
 		marginBottom: 5
 	},
+	formHelper: {
+		fontSize: 12,
+		fontFamily: NunitoRegular,
+		marginBottom: 5,
+		color: GrayColor
+	},
+	formOption: {
+		fontSize: 12,
+		fontFamily: NunitoBold,
+		color: BlackColor
+	}
 });
