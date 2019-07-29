@@ -87,7 +87,7 @@ export default class SplashScreen extends Component {
 		await this.requestSignature()
 		await this.requestCameraPermission()
 		await this.requestGPSPermission()
-		// console.disableYellowBox = true;
+		console.disableYellowBox = true;
 		this.getCredentialStatus()
 	}
 

@@ -148,7 +148,7 @@ export default class NavigationRouter extends Component {
 					transitionConfig={transitionConfig}
 					key='root'>
 					<Scene
-						// initial
+						initial
 						// type='reset'
 						hideNavBar
 						key='splash'
@@ -160,7 +160,7 @@ export default class NavigationRouter extends Component {
 						key='login'
 						component={LoginScreen} />
 					<Scene
-						initial
+						// initial
 						type='reset'
 						hideNavBar
 						key='home'

@@ -6,6 +6,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import SignatureCapture from 'react-native-signature-capture';
 import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import CustomButton from '../components/CustomButton';
 
 const { width } = Dimensions.get('screen')
 
@@ -141,20 +142,14 @@ export default class SignatureScreen extends Component {
 					<View style={{ width: '100%', height: 2, backgroundColor: LightGrayColor }} />
 				</View>
 				<View style={{ width: '100%', height: 160, justifyContent: 'space-evenly', alignItems: 'center' }}>
-					<View style={styles.buttonBox}>
-						<TouchableWithoutFeedback onPress={this.saveSign} style={styles.buttonShadowStyle}>
-							<View style={styles.buttonStyle}>
-								<Text style={styles.buttonText}>Simpan Tanda Tangan</Text>
-							</View>
-						</TouchableWithoutFeedback>
-					</View>
-					<View style={styles.buttonBox}>
-						<TouchableWithoutFeedback onPress={() => Actions.pop()} style={styles.buttonShadowStyle}>
-							<View style={styles.buttonStyle}>
-								<Text style={styles.buttonText}>Batal Tanda Tangan</Text>
-							</View>
-						</TouchableWithoutFeedback>
-					</View>
+					<CustomButton
+						label="Simpan Tanda Tangan"
+						onPress={this.saveSign}
+					/>
+					<CustomButton
+						label="Batal Tanda Tangan"
+						onPress={() => Actions.pop()}
+					/>
 				</View>
 			</View >
 		);

@@ -7,6 +7,7 @@ import Entypo from 'react-native-vector-icons/Entypo'
 import { PrimaryColor, PrimaryColorDark, InactiveColor, BlackColor, NunitoBold, NunitoSemiBold, GrayColor, WhiteColor, NunitoRegular } from '../../GlobalConfig';
 import AsyncStorage from '@react-native-community/async-storage';
 import { Actions } from 'react-native-router-flux';
+import { APIWorkOrderList } from '../../APIConfig';
 
 const SafeArea = 15
 
@@ -21,8 +22,8 @@ export default class CollectionScreen extends Component {
 					'order_NOPK': '400000845',
 					'order_customer_name': 'ETI ARYAWATI',
 					'order_city': 'TANGERANG',
-					'order_district': 'TANGERANG',
-					'order_sub_district': 'KARAWACI BARU',
+					'order_address': 'JLKP. Guha RT 005/003 Kel. Lembang Sari, Kec Rajeg, Tangerang 15540',
+					'order_bkode': '210TO',
 					'order_unit_type': 'TOYOTA CHEVROLET SPA',
 					'order_license_plate': 'B1599COS',
 					'order_time': '8:27',
@@ -32,8 +33,8 @@ export default class CollectionScreen extends Component {
 					'order_NOPK': '400000557',
 					'order_customer_name': 'NENENG',
 					'order_city': 'TANGERANG',
-					'order_district': 'JATIUWUNG',
-					'order_sub_district': 'JATIUWUNG',
+					'order_address': 'kp. Koang jaya rt.004/004 kel. Pasar baru kec. Karawaci',
+					'order_bkode': '210NS',
 					'order_unit_type': 'NISSAN SEDAN',
 					'order_license_plate': 'B1320CFN',
 					'order_time': '8:25',
@@ -43,8 +44,8 @@ export default class CollectionScreen extends Component {
 					'order_NOPK': '400000809',
 					'order_customer_name': 'TUGINO',
 					'order_city': 'TANGERANG',
-					'order_district': 'CILEDUG',
-					'order_sub_district': 'PENINGGILAN',
+					'order_address': "Jl J Sa'alan RT 002/003 Kelurahan Kojang Jaya, Kec Karawaci, Tangerang 1511",
+					'order_bkode': '203TI',
 					'order_unit_type': 'TIMOR TIMOR',
 					'order_license_plate': 'B8754CA',
 					'order_time': '8:23',
@@ -54,8 +55,8 @@ export default class CollectionScreen extends Component {
 					'order_NOPK': '000000120',
 					'order_customer_name': 'YUDI WAHYUDI',
 					'order_city': 'TANGERANG',
-					'order_district': 'TANGERANG',
-					'order_sub_district': 'KARAWACI BARU',
+					'order_address': 'Jl Palem 8 Blok B7 no 22 RT 007/009 Kel Jatiuwung, Cibodas Tangerang',
+					'order_bkode': '410YA',
 					'order_unit_type': 'HONDA BEBEK',
 					'order_license_plate': 'B3659CBA',
 					'order_time': '8:23',
@@ -65,8 +66,8 @@ export default class CollectionScreen extends Component {
 					'order_NOPK': '400000122',
 					'order_customer_name': 'YASIN FATAYASINA , ST',
 					'order_city': 'TANGERANG',
-					'order_district': 'PAKUHAJI',
-					'order_sub_district': 'PAKUALAM',
+					'order_address': 'jl. dapati unus Rt/Rw 03/09 kel cibodas, kota tangerang',
+					'order_bkode': '410YA',
 					'order_unit_type': 'HONDA BEBEK',
 					'order_license_plate': 'B3353NZD',
 					'order_time': '8:22',
@@ -85,15 +86,6 @@ export default class CollectionScreen extends Component {
 		}
 	}
 
-	// static getDerivedStateFromProps(props, state) {
-	// 	if (props.lastUpdated !== state.lastUpdated) {
-	// 		return {
-	// 			lastUpdated: props.lastUpdated
-	// 		};
-	// 	}
-	// 	return null;
-	// }
-
 	componentDidMount() {
 		this.onRefresh()
 	}
@@ -107,41 +99,44 @@ export default class CollectionScreen extends Component {
 	 */
 	renderList = ({ item, index }) => {
 		var action = ""
-		switch (item.order_action) {
-			case "1":
-				action = "Survey"
-				break;
-			case "2":
+		switch (item.work_order_type) {
+			// case "1":
+			// 	action = "Survey"
+			// 	break;
+			case 1:
 				action = "Collection"
 				break;
-			case "3":
-				action = "Janji Bayar"
-				break;
+			// case "3":
+			// 	action = "Janji Bayar"
+			// 	break;
 		}
 		return (
 			<TouchableNativeFeedback onPress={() => this.handleItemClick(item)}>
 				<View style={{ width: '100%', paddingVertical: 10, paddingHorizontal: SafeArea }}>
 					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_NOPK}</Text>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12, color: GrayColor, textAlign: 'right' }}>{item.order_time}</Text>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.work_order_code}</Text>
+						{/* <Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12, color: GrayColor, textAlign: 'right' }}>{item.order_time}</Text> */}
 					</View>
 					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 12 }}>{item.order_customer_name}</Text>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 12 }}>{item.inquiry_collection_customer_name}</Text>
 						<Text style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{action}</Text>
 					</View>
 					<View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
 						<View style={{ paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, marginRight: 5, backgroundColor: BlackColor }}>
-							<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 10, color: WhiteColor }}>{item.order_license_plate}</Text>
+							<Text numberOfLines={1} style={{ fontFamily: NunitoBold, fontSize: 10, color: WhiteColor }}>{item.inquiry_collection_vehicle_license_plate}</Text>
 						</View>
-						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.order_unit_type}</Text>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, fontSize: 12 }}>{item.inquiry_collection_vehicle_bcode} - {item.inquiry_collection_vehicle_type}</Text>
 					</View>
-					<View style={{ width: '100%', flexDirection: 'row', alignItems: 'center' }}>
+					<View style={{ width: '100%', flexDirection: 'row' }}>
 						<Entypo
+							style={{ marginLeft: -4 }}
 							color={GrayColor}
 							size={16}
 							name={`location-pin`}
 						/>
-						<Text style={{ fontFamily: NunitoRegular, fontSize: 12 }}>{item.order_city} - {item.order_district}</Text>
+						<View style={{ flex: 1 }}>
+							<Text numberOfLines={2} style={{ fontFamily: NunitoRegular, fontSize: 12 }}>{item.inquiry_collection_customer_city_text}</Text>
+						</View>
 					</View>
 				</View>
 			</TouchableNativeFeedback>
@@ -182,10 +177,22 @@ export default class CollectionScreen extends Component {
 			filteredWorkOrderList: []
 		}, () => {
 			setTimeout(() => {
-				this.setState({
-					filteredWorkOrderList: this.state.workOrderList,
-					isLoading: false
+				const headers = new Headers()
+				headers.set('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImE4ZTA3ZjcxMjE1MWY2NjNlYmY0YjNhYThjODBmMjY5ZmQyMjRmYTlmYTBjOGU5YzFmMTAzZDhlNTZiN2ZmYzc2NWVjZGYwN2ZlMzYxNWViIn0.eyJhdWQiOiIyIiwianRpIjoiYThlMDdmNzEyMTUxZjY2M2ViZjRiM2FhOGM4MGYyNjlmZDIyNGZhOWZhMGM4ZTljMWYxMDNkOGU1NmI3ZmZjNzY1ZWNkZjA3ZmUzNjE1ZWIiLCJpYXQiOjE1NjM4NjIwMzIsIm5iZiI6MTU2Mzg2MjAzMiwiZXhwIjoxNTk1NDg0NDMyLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Y7OSPc3xBYCGn4I0w_aRkW2mg26Po700NVPtGFoDyrYAGJryzgqpQSJi9DjaK7v5BRh2ae7nVTlXdvVz4_r8gchtCY9d-ffTDOprU8SnxMOl9j9-Wq565FfnKGEY90kOXgVEEmTen0FKatbAgOqqTjFSudMe2qkAEXOSs5mythA9MW2utJf3UCTfzOQP32j88iulom5GBgDo16Rq85A_V2rsO5X6EZC4EW1Az4bKyvhfeVmkK_qggxzgU9U850ggCT5zomslZVcQt1aho_Pcex89OedBarvh2wKabmSieuuGFCvIzi96j2rPg50AYlIWIoN3VLYqBO-r8aa0lP1q8jxFgQoDQcmvftdwWdM7alRtdtjcNAu-TiYOcc-BKNYLyonLwS9gxgUPjzZbsDuRBzFXHiQ6L7ejnJvBu73eXh14pkCH_T0Yoh9CNIZOy-srBm4xzBgjULEmN4kqiI7LFptxFCsGyF-9TaKO6eh9bE27i6tLHwUMp_V2ypvts0Oo2H0UUErSCOGSID4SLN6yS6INi8e9ouLELZmzUcIqR7493F3SCDVesQ-KsvQVUDXl5cPTt8OaT08yXpNRjnxRdz1Jv3p_ecxxygl_3VDRhKkgsi0n9xUJwmsPDA_saRSIT51SVfrhtj5yo2LIQrrYStEehxq5x1gB4LVVnJcvyVY')
+				fetch(APIWorkOrderList, {
+					method: 'GET',
+					headers: headers
 				})
+					.then(res => res.json())
+					.then(resJson => this.setState({
+						filteredWorkOrderList: resJson.data.work_orders,
+						workOrderList: resJson.data.work_orders,
+						isLoading: false
+					}))
+					.catch(err => {
+						this.setState({isLoading:false})
+						console.warn(err)
+					})
 			}, 500)
 		})
 	}

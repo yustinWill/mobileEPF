@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, View, Dimensions, Image, FlatList, SafeAreaView, TouchableOpacity, TouchableNativeFeedback, ActivityIndicator } from 'react-native';
+import { Platform, StyleSheet, Text, View, Dimensions, Image, FlatList, SafeAreaView, TouchableOpacity, TouchableNativeFeedback } from 'react-native';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5'
-import { PrimaryColor, PrimaryColorDark, BlackColor, NunitoSemiBold, LightGrayColor, WhiteColor, NunitoBold, GrayColor } from '../../GlobalConfig';
+import { PrimaryColor, PrimaryColorDark, BlackColor, NunitoSemiBold, LightGrayColor, WhiteColor, NunitoBold, GrayColor, PrimaryColorLight, AccentColorGold, NunitoRegular } from '../../GlobalConfig';
 import Shimmer from 'react-native-shimmer';
 import { Actions } from 'react-native-router-flux';
-import Modal from "react-native-modal"
-import AsyncStorage from '@react-native-community/async-storage';
 import LinearGradient from 'react-native-linear-gradient'
 import { getUserData, delay } from '../../GlobalFunction';
 import { APIUpdateLocation } from '../../APIConfig';
 import Geolocation from '@react-native-community/geolocation';
+import { ProgressCircle } from 'react-native-svg-charts'
 
 const SafeArea = 15
 
@@ -24,9 +23,8 @@ export default class HomeScreen extends Component {
 			user_id: null,
 			user_code: "001EN",
 			user_full_name: "ENDANG ABDUL SOBIRIN",
+			// user_full_name: "",
 			user_role: "1",
-			user_branch: "KARAWACI",
-			user_sub_branch: "KRW",
 			user_spv: "ADE IRFAN",
 			workOrderList: [
 				{
@@ -88,6 +86,8 @@ export default class HomeScreen extends Component {
 			isLoading: false,
 			locationLat: 0,
 			locationLong: 0,
+			collectionPercentage: 93,
+			user_rank: 1
 		}
 	}
 
@@ -129,7 +129,7 @@ export default class HomeScreen extends Component {
 						.then(res => {
 							console.warn(position.coords.latitude)
 						})
-						.catch(err =>console.log(err))
+						.catch(err => console.log(err))
 				}
 			});
 		}, 10000)
@@ -203,8 +203,79 @@ export default class HomeScreen extends Component {
 			case 'setting':
 				delay(100).then(() => Actions.setting())
 				break;
+			case 'changePercentage':
+				if (this.state.collectionPercentage == 97) this.setState({ collectionPercentage: 93 })
+				else this.setState({ collectionPercentage: 97 })
+				break;
 			default:
 				break;
+		}
+	}
+
+	renderRank = () => {
+		if (this.state.user_rank && this.state.user_rank == 1) {
+			return (
+				<View style={{ width: 60, height: 25, marginRight: 5 }}>
+					<Shimmer
+						tilt={-30}
+						duration={1000}
+						pauseDuration={2000}>
+						<View style={{ width: 60, borderRadius: 5, justifyContent: 'center', height: 25, backgroundColor: AccentColorGold }}>
+						</View>
+					</Shimmer>
+					<View style={{ position: 'absolute', top: 0, width: 60, height: 25, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+						<Text style={{ color: WhiteColor, fontSize: 12, fontFamily: NunitoBold }}>No. {this.state.user_rank} </Text>
+						<FontAwesome5
+							name={'crown'}
+							size={12}
+							color={WhiteColor}
+						/>
+					</View>
+				</View>
+			)
+		}
+		if (this.state.user_rank && this.state.user_rank < 6) {
+			return (
+				<View style={{ width: 50, height: 25, marginRight: 5 }}>
+					<Shimmer
+						tilt={-30}
+						duration={1000}
+						pauseDuration={2000}>
+						<View style={{ width: 50, borderRadius: 5, justifyContent: 'center', height: 25, backgroundColor: AccentColorGold }}>
+						</View>
+					</Shimmer>
+					<View style={{ position: 'absolute', top: 0, width: 50, height: 25, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+						<Text style={{ color: WhiteColor, fontSize: 12, fontFamily: NunitoBold }}>No. {this.state.user_rank} </Text>
+					</View>
+				</View>
+			)
+		}
+		else if (this.state.user_rank && this.state.user_rank < 11) {
+			return (
+				<View style={{ width: 50, height: 25, marginRight: 5 }}>
+					<Shimmer
+						tilt={-30}
+						duration={1000}
+						pauseDuration={2000}>
+						<View style={{ width: 50, borderRadius: 5, justifyContent: 'center', height: 25, backgroundColor: LightGrayColor }}>
+						</View>
+					</Shimmer>
+					<View style={{ position: 'absolute', top: 0, width: 50, height: 25, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+						<Text style={{ color: WhiteColor, fontSize: 12, fontFamily: NunitoBold }}>No. {this.state.user_rank} </Text>
+					</View>
+				</View>
+			)
+		}
+		else if (this.state.user_rank && this.state.user_rank > 10) {
+			return (
+				<View style={{ width: 50, height: 25, marginRight: 5 }}>
+					<View style={{ width: 50, borderRadius: 5, justifyContent: 'center', height: 25, backgroundColor: BlackColor }}>
+					</View>
+					<View style={{ position: 'absolute', top: 0, width: 50, height: 25, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+						<Text style={{ color: WhiteColor, fontSize: 12, fontFamily: NunitoBold }}>No. {this.state.user_rank} </Text>
+					</View>
+				</View>
+			)
 		}
 	}
 
@@ -244,7 +315,14 @@ export default class HomeScreen extends Component {
 				path: 'setting',
 				disabled: false,
 				items: 0
-			}
+			},
+			{
+				text: 'Ubah Koleksi (Demo)',
+				icon: 'exchange-alt',
+				path: 'changePercentage',
+				disabled: false,
+				items: 0
+			},
 		]
 
 		var role_name
@@ -260,15 +338,14 @@ export default class HomeScreen extends Component {
 		return (
 			<SafeAreaView style={styles.container}>
 				<LinearGradient
-					colors={[PrimaryColorDark, PrimaryColor]}
-					useAngle
-					start={{ x: 0, y: 1 }}
-					end={{ x: 1, y: 0 }}
+					colors={[PrimaryColorDark, PrimaryColorLight]}
 					style={{
+						flexDirection: 'row',
+						justifyContent: 'space-between',
+						backgroundColor: WhiteColor,
 						width: '100%',
-						height: 100,
+						height: 140,
 						padding: SafeArea,
-						marginBottom: 10,
 						shadowColor: "#000",
 						shadowOffset: {
 							width: 0,
@@ -278,13 +355,35 @@ export default class HomeScreen extends Component {
 						shadowRadius: 2.22,
 						elevation: 3
 					}}>
-					<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 16 }}>{this.state.user_code}</Text>
-					<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 16 }}>{this.state.user_full_name}</Text>
-					<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 12 }}>{role_name}</Text>
-					<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 12 }}>{this.state.user_branch} - {this.state.user_sub_branch}</Text>
+					<View style={{ flex: 1, justifyContent: 'center' }}>
+						{/* <Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 16 }}>{this.state.user_code}</Text> */}
+						<Text numberOfLines={1} style={{ fontFamily: NunitoRegular, color: WhiteColor, fontSize: 12 }}>Selamat beraktivitas</Text>
+						<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 16 }}>{this.state.user_full_name}</Text>
+						<View style={{ flexDirection: 'row', width: '100%', height: 25, alignItems: 'center', marginTop: 10 }}>
+							{this.renderRank()}
+							<Text numberOfLines={1} style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 12 }}>{role_name}</Text>
+						</View>
+					</View>
+					<View style={{ height: '100%', width: 80, justifyContent: 'center' }}>
+						<Text style={{ fontFamily: NunitoSemiBold, color: WhiteColor, fontSize: 12, textAlign: 'center' }}>Persentase Koleksi</Text>
+						<View style={{ height: 60, width: '100%', marginVertical: 5 }}>
+							<ProgressCircle
+								style={{ height: 60 }}
+								startAngle={0}
+								endAngle={Math.PI * 2}
+								progress={this.state.collectionPercentage / 100}
+								progressColor={this.state.collectionPercentage > 95 ? AccentColorGold : BlackColor}
+								strokeWidth={3}
+							/>
+							<View style={{ position: 'absolute', top: 20, width: 80, alignItems: 'center' }}>
+								<Text style={{ fontFamily: NunitoBold, color: WhiteColor, fontSize: 14 }}>{this.state.collectionPercentage}%</Text>
+							</View>
+						</View>
+						<Text style={{ fontFamily: NunitoBold, color: WhiteColor, fontSize: 16, textAlign: 'center', letterSpacing: 1 }}>{this.state.collectionPercentage > 95 ? 'BAGUS' : 'KURANG'}</Text>
+					</View>
 				</LinearGradient>
-				<Text style={{ fontFamily: NunitoSemiBold, color: BlackColor, fontSize: 16, marginLeft: SafeArea }}>Menu Utama</Text>
-				<View style={{ marginBottom: 100, marginTop: 5, paddingLeft: 6, paddingRight: 3, width: '100%' }}>
+				<Text style={{ fontFamily: NunitoSemiBold, color: BlackColor, fontSize: 16, marginLeft: SafeArea, marginVertical: SafeArea }}>Menu Utama</Text>
+				<View style={{ marginBottom: 50, paddingLeft: 6, paddingRight: 3, width: '100%' }}>
 					<FlatList
 						scrollEnabled={false}
 						keyExtractor={(item, index) => index}
@@ -294,6 +393,7 @@ export default class HomeScreen extends Component {
 					/>
 				</View>
 				<Shimmer
+					tilt={30}
 					animationOpacity={0.2}
 					duration={4000}
 					pauseDuration={500}>

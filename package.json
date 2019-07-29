@@ -11,6 +11,7 @@
     "@react-native-community/async-storage": "react-native-community/async-storage",
     "@react-native-community/datetimepicker": "^1.0.0",
     "@react-native-community/geolocation": "react-native-community/react-native-geolocation",
+    "moment": "^2.24.0",
     "prop-types": "^15.7.2",
     "react": "16.8.6",
     "react-native": "0.60.0",
@@ -25,6 +26,8 @@
     "react-native-router-flux": "^4.0.6",
     "react-native-shimmer": "^0.5.0",
     "react-native-signature-capture": "^0.4.9",
+    "react-native-svg": "^9.5.3",
+    "react-native-svg-charts": "^5.3.0",
     "react-native-tab-view": "^2.9.0",
     "react-native-vector-icons": "^6.6.0",
     "react-native-webview": "^5.12.1"

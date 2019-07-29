@@ -7,6 +7,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getUserData, delay, toTitleCase } from '../../GlobalFunction';
 import call from 'react-native-phone-call'
+import moment from 'moment';
 
 import { TabView, TabBar } from 'react-native-tab-view';
 import { trimDDMMYYYY, idr } from '../../GlobalFunction';
@@ -249,7 +250,7 @@ class LaporanLapangan extends Component {
 			datePickerJanjiBayarShow: false,
 			timePickerJanjiBayarShow: false,
 			locationSelfiePhoto: this.props.locationSelfiePhoto,
-			withCustomerPhoto: this.props.withCustomerPhoto,
+			locationWithCustomerPhoto: this.props.locationWithCustomerPhoto,
 			questionList: []
 		}
 	}
@@ -260,9 +261,9 @@ class LaporanLapangan extends Component {
 				locationSelfiePhoto: props.locationSelfiePhoto,
 			};
 		}
-		if (props.withCustomerPhoto !== state.withCustomerPhoto) {
+		if (props.locationWithCustomerPhoto !== state.locationWithCustomerPhoto) {
 			return {
-				withCustomerPhoto: props.withCustomerPhoto,
+				locationWithCustomerPhoto: props.locationWithCustomerPhoto,
 			};
 		}
 		if (props.questionList !== state.questionList) {
@@ -308,7 +309,7 @@ class LaporanLapangan extends Component {
 			if (field == 'janjiBayar') {
 				this.setState({
 					selectedRawJanjiBayarTime: time,
-					selectedJanjiBayarTime: String(time),
+					selectedJanjiBayarTime: moment(time).format('HH:mm'),
 					timePickerJanjiBayarShow: false
 				});
 			}
@@ -372,8 +373,8 @@ class LaporanLapangan extends Component {
 			case 'locationSelfie':
 				Actions.camera({ locationSelfiePhoto: true })
 				break;
-			case 'withCustomer':
-				Actions.camera({ withCustomerPhoto: true })
+			case 'locationWithCustomerPhoto':
+				Actions.camera({ locationWithCustomerPhoto: true })
 				break;
 		}
 	}
@@ -413,8 +414,8 @@ class LaporanLapangan extends Component {
 				{
 					text: 'Ya', onPress: () => {
 						const formdata = new FormData()
-						formdata.append('date', '2019-08-01')
-						formdata.append('time', '10:00')
+						formdata.append('date', moment(this.state.selectedRawJanjiBayarDate).format('YYYY/MM/DD'))
+						formdata.append('time', this.state.selectedJanjiBayarTime)
 						formdata.append('work_order_code', 'WO1907271054230070000')
 						const headers = new Headers()
 						headers.set('Authorization', 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImE4ZTA3ZjcxMjE1MWY2NjNlYmY0YjNhYThjODBmMjY5ZmQyMjRmYTlmYTBjOGU5YzFmMTAzZDhlNTZiN2ZmYzc2NWVjZGYwN2ZlMzYxNWViIn0.eyJhdWQiOiIyIiwianRpIjoiYThlMDdmNzEyMTUxZjY2M2ViZjRiM2FhOGM4MGYyNjlmZDIyNGZhOWZhMGM4ZTljMWYxMDNkOGU1NmI3ZmZjNzY1ZWNkZjA3ZmUzNjE1ZWIiLCJpYXQiOjE1NjM4NjIwMzIsIm5iZiI6MTU2Mzg2MjAzMiwiZXhwIjoxNTk1NDg0NDMyLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Y7OSPc3xBYCGn4I0w_aRkW2mg26Po700NVPtGFoDyrYAGJryzgqpQSJi9DjaK7v5BRh2ae7nVTlXdvVz4_r8gchtCY9d-ffTDOprU8SnxMOl9j9-Wq565FfnKGEY90kOXgVEEmTen0FKatbAgOqqTjFSudMe2qkAEXOSs5mythA9MW2utJf3UCTfzOQP32j88iulom5GBgDo16Rq85A_V2rsO5X6EZC4EW1Az4bKyvhfeVmkK_qggxzgU9U850ggCT5zomslZVcQt1aho_Pcex89OedBarvh2wKabmSieuuGFCvIzi96j2rPg50AYlIWIoN3VLYqBO-r8aa0lP1q8jxFgQoDQcmvftdwWdM7alRtdtjcNAu-TiYOcc-BKNYLyonLwS9gxgUPjzZbsDuRBzFXHiQ6L7ejnJvBu73eXh14pkCH_T0Yoh9CNIZOy-srBm4xzBgjULEmN4kqiI7LFptxFCsGyF-9TaKO6eh9bE27i6tLHwUMp_V2ypvts0Oo2H0UUErSCOGSID4SLN6yS6INi8e9ouLELZmzUcIqR7493F3SCDVesQ-KsvQVUDXl5cPTt8OaT08yXpNRjnxRdz1Jv3p_ecxxygl_3VDRhKkgsi0n9xUJwmsPDA_saRSIT51SVfrhtj5yo2LIQrrYStEehxq5x1gB4LVVnJcvyVY')
@@ -436,7 +437,7 @@ class LaporanLapangan extends Component {
 									locationLat: this.state.locationLat,
 									locationLong: this.state.locationLong,
 									locationSelfiePhoto: this.state.locationSelfiePhoto,
-									withCustomerPhoto: this.state.withCustomerPhoto
+									locationWithCustomerPhoto: this.state.locationWithCustomerPhoto
 								})
 							})
 							.catch(err => alert('gagal membuat Janji Bayar'))
@@ -618,11 +619,11 @@ class LaporanLapangan extends Component {
 						<View style={[styles.formBox, { borderBottomWidth: 0 }]}>
 							<Text style={styles.formTitle}>Foto Dengan Customer</Text>
 							<View style={{ width: width - 30, height: width - 30, borderWidth: 2, borderColor: BlackColor }}>
-								<Image source={{ uri: this.state.withCustomerPhoto }} resizeMode="contain" style={{ flex: 1 }} />
+								<Image source={{ uri: this.state.locationWithCustomerPhoto }} resizeMode="contain" style={{ flex: 1 }} />
 							</View>
 							<CustomButton
-								label={this.state.withCustomerPhoto ? "Ambil Ulang Foto" : "Ambil Foto"}
-								onPress={this.openTakePictureScreen('withCustomer')}
+								label={this.state.locationWithCustomerPhoto ? "Ambil Ulang Foto" : "Ambil Foto"}
+								onPress={this.openTakePictureScreen('locationWithCustomerPhoto')}
 							/>
 						</View>
 						<View style={{ width: '100%', paddingHorizontal: SafeArea, marginBottom: SafeArea, marginTop: 5 }}>
@@ -880,7 +881,7 @@ export default class CollectionDetailScreen extends Component {
 			customerData: null,
 			isLoading: true,
 			locationSelfiePhoto: null,
-			withCustomerPhoto: null,
+			locationWithCustomerPhoto: null,
 			needLogin: false
 		}
 	}
@@ -891,9 +892,9 @@ export default class CollectionDetailScreen extends Component {
 				locationSelfiePhoto: props.locationSelfiePhoto,
 			};
 		}
-		if (props.withCustomerPhoto !== state.withCustomerPhoto) {
+		if (props.locationWithCustomerPhoto !== state.locationWithCustomerPhoto) {
 			return {
-				withCustomerPhoto: props.withCustomerPhoto,
+				locationWithCustomerPhoto: props.locationWithCustomerPhoto,
 			};
 		}
 		return null;

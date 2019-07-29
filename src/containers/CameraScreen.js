@@ -5,7 +5,8 @@ import { PrimaryColorDark, PrimaryColorLight, WhiteColor, NunitoBold, GrayColor,
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { RNCamera } from 'react-native-camera';
-import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import CustomButton from '../components/CustomButton';
 
 const { width } = Dimensions.get('screen')
 
@@ -41,9 +42,9 @@ export default class CameraScreen extends Component {
 				Actions.pop()
 				setTimeout(() => Actions.refresh({ locationSelfiePhoto: data.uri }), 0)
 			}
-			if (this.props.withCustomerPhoto) {
+			if (this.props.locationWithCustomerPhoto) {
 				Actions.pop()
-				setTimeout(() => Actions.refresh({ withCustomerPhoto: data.uri }), 0)
+				setTimeout(() => Actions.refresh({ locationWithCustomerPhoto: data.uri }), 0)
 			}
 		}
 	};
@@ -123,47 +124,12 @@ export default class CameraScreen extends Component {
 					</RNCamera>
 				}
 				<View style={{ width: '100%', height: 100, justifyContent: 'center', alignItems: 'center' }}>
-					<View style={styles.buttonBox}>
-						<TouchableWithoutFeedback onPress={() => Actions.pop()} style={styles.buttonShadowStyle}>
-							<View style={styles.buttonStyle}>
-								<Text style={styles.buttonText}>Batal Foto</Text>
-							</View>
-						</TouchableWithoutFeedback>
-					</View>
+					<CustomButton
+						label="Batal Foto"
+						onPress={() => Actions.pop()}
+					/>
 				</View>
 			</View >
 		);
 	}
 }
-
-const styles = StyleSheet.create({
-	buttonBox: {
-		width: '100%',
-		paddingHorizontal: SafeArea,
-		height: 70,
-		justifyContent: 'center'
-	},
-	buttonStyle: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: '100%',
-		height: 50
-	},
-	buttonShadowStyle: {
-		backgroundColor: PrimaryColorDark,
-		borderRadius: 10,
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: 1,
-		},
-		shadowOpacity: 0.22,
-		shadowRadius: 2.22,
-		elevation: 3,
-	},
-	buttonText: {
-		color: WhiteColor,
-		fontFamily: NunitoBold,
-		letterSpacing: 1
-	},
-});
