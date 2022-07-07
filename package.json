@@ -11,7 +11,7 @@
     "@react-native-community/async-storage": "react-native-community/async-storage",
     "@react-native-community/datetimepicker": "^1.0.0",
     "@react-native-community/geolocation": "react-native-community/react-native-geolocation",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "prop-types": "^15.7.2",
     "react": "16.8.6",
     "react-native": "0.60.0",
